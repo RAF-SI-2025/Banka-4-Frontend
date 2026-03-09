@@ -1,0 +1,165 @@
+.navbar {
+  height: 64px;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brandIcon {
+  width: 32px;
+  height: 32px;
+  background: var(--blue);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.brandText {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.navLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.06);
+}
+
+.navLink.active {
+  color: #fff;
+  background: rgba(27,79,216,0.4);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.adminBadge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(59,130,246,0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.userChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.userChip:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+}
+
+.userDropdown {
+  position: relative;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  min-width: 190px;
+  overflow: hidden;
+  z-index: 200;
+  border: 1px solid var(--border);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tx-1);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition);
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background: var(--input-bg);
+}
+
+.dropdownItem + .dropdownItem {
+  border-top: 1px solid var(--border);
+}

@@ -1,0 +1,56 @@
+.stranica {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.sadrzaj {
+  text-align: center;
+  padding: 40px;
+}
+
+.kod {
+  font-size: 96px;
+  font-weight: 700;
+  color: var(--border);
+  line-height: 1;
+  margin-bottom: 16px;
+  letter-spacing: -4px;
+}
+
+.naslov {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--tx-1);
+  margin-bottom: 8px;
+}
+
+.opis {
+  font-size: 15px;
+  color: var(--tx-2);
+  margin-bottom: 32px;
+}
+
+.dugme {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 24px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.dugme:hover {
+  background: var(--navy-mid);
+  transform: translateY(-1px);
+}

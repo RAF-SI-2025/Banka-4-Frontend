@@ -1,0 +1,27 @@
+.stranica {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.sadrzaj {
+  flex: 1;
+  padding: 36px 40px;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.naslov {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--tx-1);
+  letter-spacing: -0.4px;
+  margin-bottom: 8px;
+}
+
+.opis {
+  font-size: 14px;
+  color: var(--tx-2);
+}

@@ -1,0 +1,39 @@
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filters input,
+.filters select {
+  height: 40px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--tx-1);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.filters input:focus,
+.filters select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(27,79,216,0.1);
+}
+
+.filters input::placeholder {
+  color: var(--tx-3);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+}
+
+.selectInput {
+  min-width: 140px;
+}

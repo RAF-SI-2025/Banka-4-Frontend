@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAFBank — Portal za zaposlene</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ─── Reset & Tokens ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:        #0D1B3E;
+  --navy-mid:    #152852;
+  --blue:        #1B4FD8;
+  --blue-light:  #2563EB;
+  --blue-dim:    rgba(27,79,216,0.12);
+  --accent:      #3B82F6;
+  --accent-glow: rgba(59,130,246,0.35);
+
+  --bg:          #F0F3F9;
+  --surface:     #FFFFFF;
+  --border:      #DDE3EF;
+  --border-focus:#1B4FD8;
+  --input-bg:    #F7F9FC;
+
+  --tx-1:        #0D1B3E;
+  --tx-2:        #4A5568;
+  --tx-3:        #8A96A8;
+  --tx-white:    #FFFFFF;
+
+  --green:       #10B981;
+  --green-bg:    #ECFDF5;
+  --red:         #EF4444;
+  --red-bg:      #FEF2F2;
+  --amber:       #F59E0B;
+
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+
+  --shadow-sm:   0 1px 3px rgba(13,27,62,0.06), 0 1px 2px rgba(13,27,62,0.04);
+  --shadow:      0 4px 16px rgba(13,27,62,0.08), 0 1px 4px rgba(13,27,62,0.04);
+  --shadow-lg:   0 12px 40px rgba(13,27,62,0.12), 0 4px 12px rgba(13,27,62,0.06);
+
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--tx-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Screen switcher (demo only) ─── */
+.switcher {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  gap: 6px;
+  background: rgba(13,27,62,0.85);
+  backdrop-filter: blur(12px);
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.switcher button {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.55);
+  background: transparent;
+  transition: var(--transition);
+  letter-spacing: 0.01em;
+}
+.switcher button.active {
+  background: var(--blue);
+  color: #fff;
+}
+.switcher button:hover:not(.active) {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+
+/* ─── Screen container ─── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ════════════════════════════════════════
+   SCREEN 1 — LOGIN
+════════════════════════════════════════ */
+.login-wrap {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 520px 1fr;
+  min-height: 100vh;
+}
+
+/* Left brand panel */
+.login-brand {
+  background: linear-gradient(160deg, #0D1B3E 0%, #152852 55%, #1B3A6B 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 52px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--blue);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.brand-icon svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; }
+.brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--tx-3);
+  margin-top: 1px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brand-content {
+  position: relative;
+  z-index: 1;
+}
+.brand-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.brand-headline {
+  font-size: 38px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  margin-bottom: 20px;
+}
+.brand-desc {
+  font-size: 15px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.65;
+  max-width: 360px;
+  margin-bottom: 40px;
+}
+.brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.brand-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.feature-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue-light);
+  flex-shrink: 0;
+}
+.feature-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+}
+
+.brand-footer {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  color: rgba(255,255,255,0.2);
+}
+
+/* Right form panel */
+.login-form-panel {
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.login-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 48px;
+  width: 100%;
+  max-width: 460px;
+  animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.form-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--tx-1);
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+.form-subtitle {
+  font-size: 14px;
+  color: var(--tx-2);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.form-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 32px;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx-2);
+  margin-bottom: 7px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.field input, .field select {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--tx-1);
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  outline: none;
+  appearance: none;
+}
+.field input::placeholder { color: var(--tx-3); }
+.field input:focus, .field select:focus {
+  border-color: var(--border-focus);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(27,79,216,0.1);
+}
+.field input.has-value { background: #fff; }
+
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.forgot-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--blue);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+.forgot-link:hover { color: var(--navy); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(27,79,216,0.3);
+}
+.btn-primary:hover {
+  background: var(--navy-mid);
+  box-shadow: 0 4px 16px rgba(27,79,216,0.4);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--tx-2);
+  border: 1.5px solid var(--border);
+}
+.btn-ghost:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-dim);
+}
+
+.btn-secondary {
+  background: var(--input-bg);
+  color: var(--tx-1);
+  border: 1.5px solid var(--border);
+}
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+/* Error/alert */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+.alert-error { background: var(--red-bg); color: #991B1B; border: 1px solid #FECACA; }
+.alert-success { background: var(--green-bg); color: #065F46; border: 1px solid #A7F3D0; }
+.alert-info { background: var(--blue-dim); color: var(--navy); border: 1px solid rgba(27,79,216,0.2); }
+.alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+.form-footer-text {
+  text-align: center;
+  font-size: 12px;
+  color: var(--tx-3);
+  margin-top: 28px;
+}
+
+/* ════════════════════════════════════════
+   SHARED LAYOUT — Authenticated screens
+════════════════════════════════════════ */
+.app-layout {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.navbar {
+  height: 64px;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.navbar-brand .brand-icon { width: 32px; height: 32px; border-radius: 8px; }
+.navbar-brand .brand-icon svg { width: 18px; height: 18px; }
+.navbar-brand-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.nav-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.nav-link:hover { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.06); }
+.nav-link.active { color: #fff; background: rgba(27,79,216,0.4); }
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.user-chip:hover { background: rgba(255,255,255,0.1); }
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85); }
+.admin-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(59,130,246,0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.page-content {
+  flex: 1;
+  padding: 36px 40px;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.page-breadcrumb {
+  font-size: 12px;
+  color: var(--tx-3);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.breadcrumb-sep { color: var(--border); }
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--tx-1);
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+.page-desc {
+  font-size: 14px;
+  color: var(--tx-2);
+  line-height: 1.55;
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+/* ════════════════════════════════════════
+   SCREEN 2 — KREIRANJE ZAPOSLENOG
+════════════════════════════════════════ */
+.create-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.form-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.form-section {
+  padding: 28px 32px;
+}
+.form-section + .form-section {
+  border-top: 1px solid var(--border);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.section-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--blue-dim);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.section-icon svg { width: 16px; height: 16px; stroke: var(--blue); fill: none; stroke-width: 2; }
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx-1);
+  letter-spacing: -0.1px;
+}
+
+.field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.field-full { grid-column: 1 / -1; }
+
+.field label .required {
+  color: var(--red);
+  margin-left: 2px;
+}
+
+/* Toggle */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  height: 46px;
+}
+.toggle-label { font-size: 14px; color: var(--tx-1); }
+.toggle {
+  width: 40px;
+  height: 22px;
+  background: var(--green);
+  border-radius: 11px;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px;
+  right: 3px;
+  transition: transform var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle.off { background: var(--border); }
+.toggle.off::after { transform: translateX(-18px); }
+
+/* Username input with badge */
+.input-with-badge {
+  position: relative;
+}
+.input-with-badge input { padding-right: 110px; }
+.input-badge {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--tx-3);
+  background: var(--border);
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Password constraints indicator */
+.pw-constraints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.pw-tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: var(--border);
+  color: var(--tx-3);
+}
+
+/* Form actions */
+.form-actions {
+  padding: 20px 32px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Info sidebar */
+.info-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.info-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.info-card-header h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx-1);
+}
+.info-card-body {
+  padding: 16px 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.info-item:last-child { border-bottom: none; padding-bottom: 0; }
+.info-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.info-item-text { color: var(--tx-2); }
+.info-item-text strong { color: var(--tx-1); font-weight: 600; }
+
+/* Email preview card */
+.email-preview {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.email-preview-bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--blue), var(--accent));
+}
+.email-preview-body {
+  padding: 20px;
+}
+.email-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--blue);
+  background: var(--blue-dim);
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+.email-preview-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx-1);
+  margin-bottom: 6px;
+}
+.email-preview-text {
+  font-size: 12px;
+  color: var(--tx-3);
+  line-height: 1.6;
+}
+.email-preview-cta {
+  margin-top: 12px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-dim);
+  padding: 7px 16px;
+  border-radius: 6px;
+}
+
+/* ════════════════════════════════════════
+   SCREEN 3 — RESET LOZINKE
+════════════════════════════════════════ */
+.reset-wrap {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 520px 1fr;
+  min-height: 100vh;
+}
+.reset-brand {
+  background: linear-gradient(160deg, #0D1B3E 0%, #152852 55%, #1B3A6B 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 52px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+
+.lock-visual {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.lock-icon-wrap {
+  width: 72px;
+  height: 72px;
+  background: rgba(27,79,216,0.2);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(27,79,216,0.3);
+}
+.lock-icon-wrap svg { width: 32px; height: 32px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+
+.reset-form-panel {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+/* Step indicator */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 4px;
+  width: 100%;
+  max-width: 460px;
+}
+.step-item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+.step-circle.active { background: var(--blue); color: #fff; box-shadow: 0 0 0 4px rgba(27,79,216,0.15); }
+.step-circle.done { background: var(--green); color: #fff; }
+.step-circle.inactive { background: var(--border); color: var(--tx-3); }
+.step-info { margin-left: 8px; }
+.step-number { font-size: 10px; font-weight: 600; color: var(--tx-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.step-name { font-size: 12px; font-weight: 500; color: var(--tx-2); }
+.step-name.active-text { color: var(--blue); font-weight: 600; }
+.step-line { flex: 1; height: 1.5px; background: var(--border); margin: 0 8px; }
+.step-line.done { background: var(--green); }
+
+.reset-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 48px;
+  width: 100%;
+  max-width: 460px;
+  animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+/* Password strength */
+.pw-strength {
+  margin-top: 8px;
+}
+.pw-strength-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.pw-strength-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease, background 0.4s ease;
+  width: 66%;
+  background: var(--green);
+}
+.pw-strength-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--green);
+}
+
+/* ─── Responsive hint ─── */
+@media (max-width: 900px) {
+  .login-wrap, .reset-wrap { grid-template-columns: 1fr; }
+  .login-brand, .reset-brand { display: none; }
+  .create-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Screen switcher (demo navigation) -->
+<div class="switcher">
+  <button class="active" onclick="showScreen('login')">Prijava</button>
+  <button onclick="showScreen('create')">Novi zaposleni</button>
+  <button onclick="showScreen('reset')">Reset lozinke</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 — LOGIN
+══════════════════════════════════════ -->
+<div class="screen active" id="s-login">
+  <div class="login-wrap">
+
+    <!-- Brand panel -->
+    <aside class="login-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div>
+      <div class="brand-name">RAFBank</div>
+          <div class="brand-sub">Portal za zaposlene</div>
+        </div>
+      </div>
+
+      <div class="brand-content">
+        <div class="brand-eyebrow">Interni sistem</div>
+        <h1 class="brand-headline">Upravljanje<br>korisnicima</h1>
+        <p class="brand-desc">Centralizovana platforma za administraciju zaposlenih, kontrolu pristupa i upravljanje klijentskim nalozima.</p>
+        <div class="brand-features">
+          <div class="brand-feature"><div class="feature-dot"></div><span class="feature-text">Upravljanje zaposlenima i permisijama</span></div>
+          <div class="brand-feature"><div class="feature-dot"></div><span class="feature-text">Pregled i kreiranje klijentskih naloga</span></div>
+          <div class="brand-feature"><div class="feature-dot"></div><span class="feature-text">Bezbedna autentifikacija i autorizacija</span></div>
+          <div class="brand-feature"><div class="feature-dot"></div><span class="feature-text">Revizijski trag svih akcija</span></div>
+        </div>
+      </div>
+
+      <div class="brand-footer">© 2025 RAFBank · v2.1.0 · Interno korišćenje</div>
+    </aside>
+
+    <!-- Form panel -->
+    <main class="login-form-panel">
+      <div class="login-card">
+        <h2 class="form-title">Dobrodošli nazad</h2>
+        <p class="form-subtitle">Unesite vaše kredencijale za pristup portalu.</p>
+        <div class="form-divider"></div>
+
+        <div class="alert alert-error">
+          <span class="alert-icon">⚠</span>
+          <span>Pogrešan email ili lozinka. Proverite unos i pokušajte ponovo.</span>
+        </div>
+
+        <div class="field">
+          <label>Email adresa</label>
+          <input type="email" placeholder="ime.prezime@rafbank.rs" value="petar.petrovic@rafbank.rs" class="has-value">
+        </div>
+
+        <div class="field">
+          <label>Lozinka</label>
+          <input type="password" placeholder="Unesite lozinku" value="password123">
+        </div>
+
+        <div class="field-row">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--tx-2);">
+            <input type="checkbox" style="width:15px;height:15px;accent-color:var(--blue);"> Zapamti prijavu
+          </label>
+          <a class="forgot-link" onclick="showScreen('reset')">Zaboravili ste lozinku?</a>
+        </div>
+
+        <button class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Prijavi se
+        </button>
+
+        <p class="form-footer-text">Problem sa prijavom? Kontaktirajte IT podršku: <strong>it@rafbank.rs</strong></p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — KREIRANJE ZAPOSLENOG
+══════════════════════════════════════ -->
+<div class="screen" id="s-create">
+  <div class="app-layout">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span class="navbar-brand-text">RAFBank</span>
+      </div>
+      <div class="navbar-nav">
+        <span class="nav-link active">Zaposleni</span>
+        <span class="nav-link">Klijenti</span>
+        <span class="nav-link">Permisije</span>
+        <span class="nav-link">Izveštaji</span>
+      </div>
+      <div class="navbar-right">
+        <span class="admin-badge">Administrator</span>
+        <div class="user-chip">
+          <div class="user-avatar">PP</div>
+          <span class="user-name">Petar Petrović</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page content -->
+    <main class="page-content">
+      <div class="page-breadcrumb">
+        <span>Zaposleni</span>
+        <span class="breadcrumb-sep">›</span>
+        <span style="color:var(--tx-2);">Novi zaposleni</span>
+      </div>
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Kreiranje novog zaposlenog</h1>
+          <p class="page-desc">Popunite sva obavezna polja. Zaposleni će dobiti email sa linkom za aktivaciju naloga.</p>
+        </div>
+        <button class="btn btn-ghost" style="gap:6px;" onclick="showScreen('login')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Nazad
+        </button>
+      </div>
+
+      <div class="create-grid">
+        <!-- Form -->
+        <div class="form-card">
+
+          <!-- Lični podaci -->
+          <div class="form-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <span class="section-title">Lični podaci</span>
+            </div>
+            <div class="field-grid-2">
+              <div class="field">
+                <label>Ime <span class="required">*</span></label>
+                <input type="text" value="Petar" class="has-value">
+              </div>
+              <div class="field">
+                <label>Prezime <span class="required">*</span></label>
+                <input type="text" value="Petrović" class="has-value">
+              </div>
+              <div class="field">
+                <label>Email adresa <span class="required">*</span></label>
+                <input type="email" value="petar@primer.raf" class="has-value">
+              </div>
+              <div class="field">
+                <label>Broj telefona</label>
+                <input type="tel" value="+381645555555" class="has-value">
+              </div>
+              <div class="field">
+                <label>Adresa</label>
+                <input type="text" value="Njegoševa 25" class="has-value">
+              </div>
+              <div class="field">
+                <label>Datum rođenja <span class="required">*</span></label>
+                <input type="date" value="1990-05-20" class="has-value">
+              </div>
+              <div class="field">
+                <label>Pol <span class="required">*</span></label>
+                <select class="has-value">
+                  <option selected>Muški</option>
+                  <option>Ženski</option>
+                  <option>Ne želim da navedem</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Status pri kreiranju</label>
+                <div class="toggle-wrap">
+                  <span class="toggle-label">Aktivan nalog</span>
+                  <div class="toggle" id="activeToggle" onclick="this.classList.toggle('off')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Radno mesto -->
+          <div class="form-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              </div>
+              <span class="section-title">Radno mesto</span>
+            </div>
+            <div class="field-grid-2">
+              <div class="field">
+                <label>Pozicija <span class="required">*</span></label>
+                <input type="text" value="Menadžer" class="has-value">
+              </div>
+              <div class="field">
+                <label>Departman <span class="required">*</span></label>
+                <input type="text" value="Finansije" class="has-value">
+              </div>
+            </div>
+          </div>
+
+          <!-- Pristup -->
+          <div class="form-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <span class="section-title">Pristup sistemu</span>
+            </div>
+            <div class="field">
+              <label>Username <span class="required">*</span></label>
+              <div class="input-with-badge">
+                <input type="text" value="petar90" class="has-value">
+        <span class="input-badge">Auto-gen</span>
+              </div>
+            </div>
+            <div class="field" style="margin-top:16px;">
+              <label>Lozinka</label>
+              <div class="alert alert-info" style="margin-bottom:0;margin-top:0;">
+                <span class="alert-icon">ℹ</span>
+                <span>Zaposleni postavlja lozinku sam, putem aktivacionog linka koji dobija na email.</span>
+              </div>
+              <div class="pw-constraints" style="margin-top:10px;">
+                <span class="pw-tag">Min. 8 karaktera</span>
+                <span class="pw-tag">Max. 32 karaktera</span>
+                <span class="pw-tag">≥ 2 broja</span>
+                <span class="pw-tag">1 veliko slovo</span>
+                <span class="pw-tag">1 malo slovo</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="form-actions">
+            <button class="btn btn-ghost">Otkaži</button>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-secondary">Sačuvaj kao nacrt</button>
+              <button class="btn btn-primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Kreiraj zaposlenog
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="info-sidebar">
+          <div class="info-card">
+            <div class="info-card-header">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <h4>Napomene</h4>
+            </div>
+            <div class="info-card-body">
+              <div class="info-item">
+                <div class="info-bullet"></div>
+                <div class="info-item-text"><strong>Email mora biti jedinstven</strong> — dva naloga ne mogu imati isti email</div>
+              </div>
+              <div class="info-item">
+                <div class="info-bullet"></div>
+                <div class="info-item-text"><strong>Username</strong> se auto-generiše iz imena, ali ga možete izmeniti</div>
+              </div>
+              <div class="info-item">
+                <div class="info-bullet"></div>
+                <div class="info-item-text">Administrator <strong>ne unosi lozinku</strong> — zaposleni je postavlja sam</div>
+              </div>
+              <div class="info-item">
+                <div class="info-bullet"></div>
+                <div class="info-item-text">Permisije se dodeljuju <strong>nakon kreiranja</strong> iz profila zaposlenog</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="email-preview">
+            <div class="email-preview-bar"></div>
+            <div class="email-preview-body">
+              <div class="email-tag">Aktivacioni email</div>
+              <div class="email-preview-title">Primer emaila koji zaposleni prima</div>
+              <div class="email-preview-text">
+                Poštovani <strong>Petar</strong>,<br><br>
+                Vaš nalog na RAFBank portalu je kreiran. Kliknite na dugme ispod da aktivirate nalog i postavite lozinku.<br><br>
+                <em>Link ističe za 24 sata.</em>
+              </div>
+              <div class="email-preview-cta">Aktiviraj nalog →</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 3 — RESET LOZINKE
+══════════════════════════════════════ -->
+<div class="screen" id="s-reset">
+  <div class="reset-wrap">
+
+    <!-- Brand panel -->
+    <aside class="reset-brand">
+      <div class="brand-logo">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">RAFBank</div>
+          <div class="brand-sub">Portal za zaposlene</div>
+        </div>
+      </div>
+
+      <div class="lock-visual">
+        <div class="lock-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="var(--accent)"/></svg>
+        </div>
+        <div>
+          <div class="brand-eyebrow">Sigurnost</div>
+          <h2 class="brand-headline">Resetujte<br>lozinku</h2>
+          <p class="brand-desc">Brzo i sigurno resetujte pristup svom nalogu putem verifikacionog emaila.</p>
+        </div>
+        <div class="brand-features">
+          <div class="brand-feature"><div class="feature-dot"></div><span class="feature-text">Link aktivan 30 minuta</span></div>
+          <div class="brand-feature"><div class="feature-dot"></div><span class="feature-text">Jednokratna upotreba</span></div>
+          <div class="brand-feature"><div class="feature-dot"></div><span class="feature-text">Potvrda putem emaila</span></div>
+        </div>
+      </div>
+
+      <div class="brand-footer">© 2025 RAFBank · v2.1.0</div>
+    </aside>
+
+    <!-- Form panel -->
+    <main class="reset-form-panel">
+
+      <!-- Step indicator -->
+      <div class="steps">
+        <div class="step-item">
+          <div class="step-circle active">1</div>
+          <div class="step-info">
+            <div class="step-number">Korak 1</div>
+            <div class="step-name active-text">Unesi email</div>
+          </div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-circle inactive">2</div>
+          <div class="step-info">
+            <div class="step-number">Korak 2</div>
+            <div class="step-name">Proveri inbox</div>
+          </div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-circle inactive">3</div>
+          <div class="step-info">
+            <div class="step-number">Korak 3</div>
+            <div class="step-name">Nova lozinka</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: Email -->
+      <div class="reset-card" id="reset-step1">
+        <h2 class="form-title">Zaboravili ste lozinku?</h2>
+        <p class="form-subtitle">Unesite email adresu vašeg naloga. Poslaćemo vam link za resetovanje lozinke.</p>
+        <div class="form-divider"></div>
+
+        <div class="field">
+          <label>Email adresa</label>
+          <input type="email" placeholder="ime.prezime@rafbank.rs">
+        </div>
+
+        <button class="btn btn-primary" onclick="showResetStep(2)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Pošalji link za resetovanje
+        </button>
+
+        <p style="text-align:center; margin-top:20px;">
+          <a class="forgot-link" onclick="showScreen('login')">← Nazad na prijavu</a>
+        </p>
+      </div>
+
+      <!-- Step 2: Email sent -->
+      <div class="reset-card" id="reset-step2" style="display:none;">
+        <div style="text-align:center; padding: 12px 0 28px;">
+          <div style="width:64px;height:64px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2 class="form-title" style="margin-bottom:8px;">Email je poslat!</h2>
+          <p class="form-subtitle" style="margin-bottom:0;">Proverite vaš inbox na adresi <strong>petar@primer.raf</strong>. Link je aktivan <strong>30 minuta</strong>.</p>
+        </div>
+
+        <div class="alert alert-info">
+          <span class="alert-icon">ℹ</span>
+          <span>Niste primili email? Proverite <strong>spam</strong> folder ili pošaljite ponovo.</span>
+        </div>
+
+        <button class="btn btn-secondary" style="width:100%;margin-bottom:10px;" onclick="showResetStep(1)">Pošalji ponovo</button>
+        <button class="btn btn-primary" onclick="showResetStep(3)">Imam link → Postavi lozinku</button>
+
+        <p style="text-align:center; margin-top:20px;">
+          <a class="forgot-link" onclick="showScreen('login')">← Nazad na prijavu</a>
+        </p>
+      </div>
+
+      <!-- Step 3: New password -->
+      <div class="reset-card" id="reset-step3" style="display:none;">
+        <h2 class="form-title">Postavite novu lozinku</h2>
+        <p class="form-subtitle">Lozinka mora imati min. 8, max. 32 karaktera, sa 2 broja, 1 velikim i 1 malim slovom.</p>
+        <div class="form-divider"></div>
+
+        <div class="field">
+          <label>Nova lozinka <span class="required">*</span></label>
+          <input type="password" value="Sifra123!" class="has-value" oninput="updateStrength(this.value)">
+          <div class="pw-strength" id="pwStrength">
+            <div class="pw-strength-bar"><div class="pw-strength-fill" id="strengthFill"></div></div>
+            <span class="pw-strength-label" id="strengthLabel">Jaka lozinka</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Potvrdi lozinku <span class="required">*</span></label>
+          <input type="password" value="Sifra123!" class="has-value">
+        </div>
+
+        <button class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Potvrdi novu lozinku
+        </button>
+
+        <p style="text-align:center; margin-top:20px;">
+          <a class="forgot-link" onclick="showScreen('login')">← Nazad na prijavu</a>
+        </p>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.switcher button').forEach((b, i) => {
+    b.classList.remove('active');
+    if (['login','create','reset'][i] === name) b.classList.add('active');
+  });
+  document.getElementById('s-' + name).classList.add('active');
+}
+
+function showResetStep(step) {
+  document.getElementById('reset-step1').style.display = step === 1 ? 'block' : 'none';
+  document.getElementById('reset-step2').style.display = step === 2 ? 'block' : 'none';
+  document.getElementById('reset-step3').style.display = step === 3 ? 'block' : 'none';
+
+  document.querySelectorAll('.step-circle').forEach((c, i) => {
+    c.className = 'step-circle ' + (i + 1 < step ? 'done' : i + 1 === step ? 'active' : 'inactive');
+    if (i + 1 < step) c.innerHTML = '✓';
+    else c.innerHTML = i + 1;
+  });
+  document.querySelectorAll('.step-name').forEach((n, i) => {
+    n.className = 'step-name' + (i + 1 === step ? ' active-text' : '');
+  });
+  document.querySelectorAll('.step-line').forEach((l, i) => {
+    l.className = 'step-line' + (i + 1 < step ? ' done' : '');
+  });
+}
+
+function updateStrength(val) {
+  const fill = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9].*[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const pcts = ['20%','45%','68%','100%'];
+  const colors = ['var(--red)','var(--amber)','var(--accent)','var(--green)'];
+  const labels = ['Slaba','Srednja','Dobra','Jaka'];
+  fill.style.width = pcts[score] || '20%';
+  fill.style.background = colors[score] || colors[0];
+  label.style.color = colors[score] || colors[0];
+  label.textContent = (labels[score] || 'Slaba') + ' lozinka';
+}
+</script>
+</body>
+</html>

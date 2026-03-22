@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect }  from 'react';
 import { NavLink, useNavigate }         from 'react-router-dom';
 import { useAuthStore }                 from '../../store/authStore';
-import { usePermissions }              from '../../hooks/usePermissions';
+import { usePermissions }               from '../../hooks/usePermissions';
 import ChangePasswordModal              from './ChangePasswordModal';
 import styles                           from './Navbar.module.css';
+import { isSupervisorLike }             from '/src/utils/roleGuards.js'
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ export default function Navbar() {
 
   const menuRef  = useRef(null);
   const adminRef = useRef(null);
+
+  const canAccessSupervisorOrders = isSupervisorLike(user);
  
 
   useEffect(() => {
@@ -98,6 +101,15 @@ export default function Navbar() {
           >
             Kartice
           </NavLink>
+
+          {canAccessSupervisorOrders && (
+          <NavLink
+            to="/supervisor/orders"
+            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+          >
+            Orderi
+          </NavLink>
+          )}
 
 
 

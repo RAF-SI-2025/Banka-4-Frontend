@@ -261,7 +261,9 @@ export default function NewAccount() {
         initial_balance: Number(accountData.initial_balance),
         create_card:     accountData.create_card,
         generate_card:   accountData.create_card,
-        name:            accountKindStr === 'Current' ? 'Tekući račun RSD' : `Devizni račun ${accountData.currency}`,
+        name:            accountKindStr === 'Current'
+          ? `Tekući račun RSD ${Math.random().toString(36).slice(2, 7)}`
+          : `Devizni račun ${accountData.currency} ${Math.random().toString(36).slice(2, 7)}`,
         expires_at:      expiresAt.toISOString(),
       };
 

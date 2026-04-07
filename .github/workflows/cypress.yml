@@ -3,7 +3,10 @@ run-name: End-to-end for ${{ github.repository }}
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
+    branches:
+      - main
 
 jobs:
   end-to-end:
@@ -19,7 +22,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup backend using Docker Compose
         run: |
@@ -39,14 +42,12 @@ jobs:
             exit 1
           fi
 
-      - name: Copy frontend .env file
-        run: cp .github/workflows/.env.test .env
+      - name: Copy frontend environment variables
+        run: cp .github/workflows/cypress.env.test.json cypress.env.json && cp .github/workflows/.env.test .env
 
       - name: Run Cypress
+        timeout-minutes: 30
         uses: cypress-io/github-action@783cb3f07983868532cabaedaa1e6c00ff4786a8
         with:
-          # build: npm run build
-          # start: npm run preview
-          # wait-on: 'http://localhost:4173'
-          build: npm run dev
+          start: npm run dev
           browser: chrome

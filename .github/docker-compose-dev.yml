@@ -1,0 +1,76 @@
+services:
+  user_service_db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  user_service:
+    image: ghcr.io/raf-si-2025/banka-4-backend/user-service:latest
+    ports:
+      - "${PORT}:${PORT}"
+    env_file: .env
+    environment:
+      AIR_CONFIG_PATH: /app/services/user-service/.air.toml
+    depends_on:
+      user_service_db:
+        condition: service_healthy
+    healthcheck:
+      test: curl -f http://localhost:${PORT}/api/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  banking_service:
+    image: ghcr.io/raf-si-2025/banka-4-backend/banking-service:latest
+    ports:
+      - "${BANKING_SERVICE_PORT}:${BANKING_SERVICE_PORT}"
+    env_file: .env
+    environment:
+      AIR_CONFIG_PATH: /app/services/banking-service/.air.toml
+      PORT: ${BANKING_SERVICE_PORT}
+      GRPC_PORT: "50052"
+      USER_SERVICE_ADDR: user_service:50051
+      USER_SERVICE_BASE_URL: http://user_service:${PORT}
+    depends_on:
+      user_service_db:
+        condition: service_healthy
+      user_service:
+        condition: service_healthy
+    healthcheck:
+      test: curl -f http://localhost:${BANKING_SERVICE_PORT}/api/health || exit 1
+
+  trading_service:
+    image: ghcr.io/raf-si-2025/banka-4-backend/trading-service:latest
+    ports:
+      - "${TRADING_SERVICE_PORT}:${TRADING_SERVICE_PORT}"
+    env_file: .env
+    environment:
+      AIR_CONFIG_PATH: /app/services/trading-service/.air.toml
+      PORT: ${TRADING_SERVICE_PORT}
+      USER_SERVICE_ADDR: user_service:50051
+      USER_SERVICE_BASE_URL: http://user_service:${PORT}
+      BANKING_SERVICE_ADDR: banking_service:50052
+    depends_on:
+      user_service_db:
+        condition: service_healthy
+      user_service:
+        condition: service_healthy
+    healthcheck:
+      test: curl -f http://localhost:${TRADING_SERVICE_PORT}/api/health || exit 1
+
+  maildev:
+    image: maildev/maildev:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+    environment:
+      MAILDEV_SMTP_PORT: 1025

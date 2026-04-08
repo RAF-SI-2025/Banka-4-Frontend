@@ -22,12 +22,12 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Setup backend using Docker Compose
         run: |
-          wget ${{ vars.DOCKER_COMPOSE_URL }} -O docker-compose.yml
-          wget ${{ vars.ENV_URL }} -O .env
+          cp .github/docker-compose-dev.yml docker-compose.yml
+          cp .github/.env.example .env
           docker compose up -d
 
       - name: Wait for the services to start up and check their health

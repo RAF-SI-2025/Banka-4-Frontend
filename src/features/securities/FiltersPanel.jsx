@@ -8,7 +8,8 @@ const DEFAULT_FILTERS = {
   bidMin: '', bidMax: '',
   askMin: '', askMax: '',
   volumeMin: '', volumeMax: '',
-  settlementDate: '',
+  settlementDateFrom: '',
+  settlementDateTo: '',
 };
 
 export default function FiltersPanel({ activeTab, filters, onChange, onReset }) {
@@ -19,7 +20,33 @@ export default function FiltersPanel({ activeTab, filters, onChange, onReset }) 
     setTempFilters(prev => ({ ...prev, [key]: value }));
   }
 
+  const [validationError, setValidationError] = useState('');
+
+  function validateRanges(f) {
+    const ranges = [
+      ['priceMin', 'priceMax', 'Cena'],
+      ['bidMin', 'bidMax', 'Bid'],
+      ['askMin', 'askMax', 'Ask'],
+      ['volumeMin', 'volumeMax', 'Volumen'],
+    ];
+    for (const [minKey, maxKey, label] of ranges) {
+      if (f[minKey] !== '' && f[maxKey] !== '' && Number(f[minKey]) > Number(f[maxKey])) {
+        return `${label}: minimalna vrednost ne može biti veća od maksimalne.`;
+      }
+    }
+    if (f.settlementDateFrom && f.settlementDateTo && f.settlementDateFrom > f.settlementDateTo) {
+      return 'Datum od ne može biti posle datuma do.';
+    }
+    return '';
+  }
+
   function handleApply() {
+    const err = validateRanges(tempFilters);
+    if (err) {
+      setValidationError(err);
+      return;
+    }
+    setValidationError('');
     onChange(tempFilters);
     setOpen(false);
   }
@@ -115,14 +142,31 @@ export default function FiltersPanel({ activeTab, filters, onChange, onReset }) 
 
           {(activeTab === 'FUTURES' || activeTab === 'OPTIONS') && (
             <div className={styles.section}>
-              <p className={styles.sectionLabel}>Settlement Date</p>
-              <input
-                className={styles.input}
-                type="date"
-                value={tempFilters.settlementDate}
-                onChange={e => handleChange('settlementDate', e.target.value)}
-              />
+              <p className={styles.sectionLabel}>Settlement Date (opseg)</p>
+              <div className={styles.rangeRow}>
+                <input
+                  className={styles.input}
+                  type="date"
+                  placeholder="Od"
+                  value={tempFilters.settlementDateFrom}
+                  onChange={e => handleChange('settlementDateFrom', e.target.value)}
+                />
+                <span className={styles.dash}>—</span>
+                <input
+                  className={styles.input}
+                  type="date"
+                  placeholder="Do"
+                  value={tempFilters.settlementDateTo}
+                  onChange={e => handleChange('settlementDateTo', e.target.value)}
+                />
+              </div>
             </div>
+          )}
+
+          {validationError && (
+            <p style={{ color: '#dc2626', fontSize: 13, fontWeight: 600, margin: 0 }}>
+              {validationError}
+            </p>
           )}
         </div>
 

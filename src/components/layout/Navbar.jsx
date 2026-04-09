@@ -45,7 +45,7 @@ export default function Navbar() {
     ? `${user.first_name} ${user.last_name}`
     : 'Korisnik';
 
-  const hasAdminAccess = canAny('admin.cards', 'admin.clients', 'admin.loans');
+  const hasAdminAccess = canAny('employee.view', 'admin.cards', 'admin.clients', 'admin.loans');
 
   return (
     <>
@@ -106,7 +106,7 @@ export default function Navbar() {
 
           {can('employee.view') && (
             <NavLink
-              to="/client/securities"
+              to="/securities"
               className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
             >
               Hartije
@@ -200,6 +200,31 @@ export default function Navbar() {
                         <path d="M12 2a3 3 0 0 1 3 3v1h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3V5a3 3 0 0 1 3-3z"/>
                       </svg>
                       Krediti
+                    </NavLink>
+                  )}
+                  {can('employee.view') && (
+                    <NavLink
+                      to="/admin/actuaries"
+                      className={({ isActive }) => `${styles.adminMenuItem} ${isActive ? styles.adminMenuItemActive : ''}`}
+                      onClick={() => setShowAdminMenu(false)}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                      </svg>
+                      Aktuari
+                    </NavLink>
+                  )}
+                  {can('employee.view') && (
+                    <NavLink
+                      to="/admin/exchanges"
+                      className={({ isActive }) => `${styles.adminMenuItem} ${isActive ? styles.adminMenuItemActive : ''}`}
+                      onClick={() => setShowAdminMenu(false)}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 3v18h18"/>
+                        <path d="M7 16l4-4 4 4 5-5"/>
+                      </svg>
+                      Berze
                     </NavLink>
                   )}
                 </div>

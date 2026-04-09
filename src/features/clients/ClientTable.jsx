@@ -23,8 +23,10 @@ export default function ClientTable({ clients, onRowClick }) {
           </tr>
         </thead>
         <tbody>
-          {clients.map((client, i) => (
-            <tr key={client.id ?? client.email ?? i} onClick={() => onRowClick?.(client.id)}>
+          {clients.map((client, i) => {
+            const clientId = client.id ?? client.user_id ?? client.client_id;
+            return (
+            <tr key={clientId ?? client.email ?? i} onClick={() => onRowClick?.(clientId)}>
               <td className={styles.name}>{client.first_name}</td>
               <td className={styles.name}>{client.last_name}</td>
               <td className={styles.email}>{client.email}</td>
@@ -38,13 +40,14 @@ export default function ClientTable({ clients, onRowClick }) {
               <td>
                 <button
                   className={styles.btnProfil}
-                  onClick={e => { e.stopPropagation(); navigate(`/clients/${client.id}`); }}
+                  onClick={e => { e.stopPropagation(); navigate(`/clients/${clientId}`); }}
                 >
                   Profil →
                 </button>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

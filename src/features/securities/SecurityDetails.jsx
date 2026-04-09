@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import OptionTable from './OptionTable';
 import styles from './SecurityDetails.module.css';
 
-const PERIODS = ['1D', '1W', '1M', '1Y'];
+const PERIODS = ['1D', '1W', '1M', '1Y', '5Y'];
 
 const TYPE_LABELS = { STOCK: 'Akcija', FUTURES: 'Futures', FOREX: 'Forex par' };
 

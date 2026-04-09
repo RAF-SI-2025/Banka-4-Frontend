@@ -26,6 +26,7 @@ import CardsPortal     from './pages/admin/CardsPortal';
 import ClientsPortal   from './pages/admin/ClientsPortal';
 import LoansPortal     from './pages/admin/LoansPortal';
 import ActuariesPage   from './pages/admin/ActuariesPage';
+import ExchangesPage   from './pages/admin/ExchangesPage';
 import PortfolioPage from './pages/admin/PortfolioPage.jsx';
 
 // Client pages
@@ -140,6 +141,8 @@ export default function App() {
         <Route path="/admin/loans"   element={<ProtectedRoute><EmployeeRoute><LoansPortal   /></EmployeeRoute></ProtectedRoute>} />
         <Route path="/tax" element={<ProtectedRoute><EmployeeRoute><TaxPage /></EmployeeRoute></ProtectedRoute>} />
         <Route path="/admin/actuaries" element={<ProtectedRoute><EmployeeRoute><ActuariesPage /></EmployeeRoute></ProtectedRoute>} />
+        <Route path="/admin/exchanges" element={<ProtectedRoute><EmployeeRoute><ExchangesPage /></EmployeeRoute></ProtectedRoute>} />
+        <Route path="/securities" element={<ProtectedRoute><EmployeeRoute><ClientSecurities /></EmployeeRoute></ProtectedRoute>} />
         <Route path="/employees" element={
           <ProtectedRoute><EmployeeRoute><PermissionRoute permission="employee.view"><EmployeeList /></PermissionRoute></EmployeeRoute></ProtectedRoute>
         } />

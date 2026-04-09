@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import Navbar from '../../components/layout/Navbar';
 import Alert from '../../components/ui/Alert';
 import { ordersApi } from '../../api/endpoints/orders';
+import { clientsApi } from '../../api/endpoints/clients';
 import { useAuthStore } from '../../store/authStore';
 import { ORDER_STATUS, USER_ROLE, normalizeOrder, APPROVAL_DECISION , ORDER_TYPE, ORDER_DIRECTION} from '../../utils/orders/orderModel';
 import { getOrderPermissions } from '../../utils/orders/orderPermissions';
@@ -117,6 +118,73 @@ export default function SupervisorOrdersPage() {
   const { isSupervisor } = usePermissions();
   const actorRole = isSupervisor ? USER_ROLE.SUPERVISOR : USER_ROLE.EMPLOYEE;
 
+  function ensureNormalizedItem(item) {
+  const src = item || {};
+  // prefer raw fields from backend, then fall back to normalizeOrder() output (if present)
+  const norm = typeof normalizeOrder === 'function' ? normalizeOrder(src) : {};
+
+  return {
+    id: src.order_id ?? src.id ?? norm.id ?? src._id ?? null,
+    agentName:
+      src.user_name ??
+      src.agent_name ??
+      norm.agentName ??
+      (src.user_id ? `#${src.user_id}` : '—'),
+    assetName:
+      src.listing_name ??
+      src.asset_name ??
+      norm.assetName ??
+      '—',
+    assetType:
+      src.asset_type ??
+      norm.assetType ??
+      '—',
+    orderType:
+      src.order_type ??
+      src.type ??
+      norm.orderType ??
+      norm.order_type ??
+      null,
+    quantity:
+      src.quantity ??
+      src.qty ??
+      norm.quantity ??
+      0,
+    contractSize:
+      src.contract_size ??
+      norm.contractSize ??
+      0,
+    pricePerUnit:
+      src.price_per_unit ??
+      src.price ??
+      norm.pricePerUnit ??
+      null,
+    direction:
+      src.direction ??
+      src.side ??
+      norm.direction ??
+      null,
+    remainingPortions:
+      src.remaining_portions ??
+      norm.remainingPortions ??
+      0,
+    status:
+      src.status ??
+      norm.status ??
+      null,
+    approvedBy:
+      src.approved_by ??
+      norm.approvedBy ??
+      '—',
+    lastModification:
+      src.last_modification ??
+      norm.lastModification ??
+      null,
+    __raw: src,
+    __norm: norm,
+  };
+}
+
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       const nodes = pageRef.current?.querySelectorAll('.page-anim');
@@ -143,11 +211,82 @@ export default function SupervisorOrdersPage() {
     if (fetchLoading) return;
 
     try {
-      const response = ordersData;
-      const normalized = (Array.isArray(response) ? response : response?.items ?? []).map(normalizeOrder);
+      const payload = Array.isArray(ordersData)
+        ? ordersData
+        : ordersData?.data ?? ordersData?.items ?? [];
 
-      // setOrders(normalized.length > 0 ? normalized : MOCK_ORDERS.map(normalizeOrder));
-      setOrders(normalized);
+      const rawList = Array.isArray(payload) ? payload : [];
+      const normalized = rawList.map(ensureNormalizedItem);
+
+      let final = normalized.length > 0
+        ? normalized
+        : MOCK_ORDERS.map((m) => ensureNormalizedItem(m));
+
+      if (final.some((it) => !it.id)) {
+        console.warn('[DEBUG] SupervisorOrdersPage: some orders missing id, sample:', final.slice(0,3).map(o => o.__raw));
+      }
+
+      (async () => {
+        const userIds = Array.from(
+          new Set(final.map((o) => o.__raw?.user_id).filter(Boolean))
+        );
+
+        if (userIds.length === 0) {
+          setOrders(final);
+          return;
+        }
+
+        try {
+          const results = await Promise.all(
+            userIds.map(async (id) => {
+              try {
+                return await clientsApi.getById(id);
+              } catch (e) {
+                return null;
+              }
+            })
+          );
+
+          const usersList = results.filter(Boolean);
+
+          const usersMap = new Map(
+            usersList.flatMap((u) => {
+              return [u.id, u.user_id, u.client_id, u._id]
+                .filter((v) => v != null)
+                .map((v) => [String(v), u]);
+            })
+          );
+
+          const finalWithUsers = final.map((it) => {
+            const uid = it.__raw?.user_id ?? it.__raw?.userId;
+            const user = usersMap.get(String(uid));
+
+            if (!user) return it;
+
+            const fullName = [user.first_name, user.last_name]
+              .filter(Boolean)
+              .join(' ')
+              .trim();
+
+            const name =
+              user.name ||
+              fullName ||
+              user.username ||
+              user.email ||
+              `#${uid}`;
+
+            return {
+              ...it,
+              agentName: name,
+            };
+          });
+
+          setOrders(finalWithUsers);
+        } catch (err) {
+          console.warn('[DEBUG] SupervisorOrdersPage: failed to fetch users', err);
+          setOrders(final);
+        }
+      })();
 
       if (fetchError) {
         setApiError(fetchError?.message || 'Orderi trenutno nisu dostupni. Prikazan je mock prikaz radi razvoja.');
@@ -308,12 +447,12 @@ export default function SupervisorOrdersPage() {
                     </tr>
                   )}
 
-                  {filteredOrders.map((order) => {
+                  {filteredOrders.map((order, index) => {
                     const permissions = getOrderPermissions(order, actorRole);
                     const isBusy = processingId === order.id;
 
                     return (
-                      <tr key={order.id}>
+                      <tr key={order.id ?? index}>
                         <td>{order.agentName}</td>
                         <td>{formatOrderType(order.orderType)}</td>
                         <td>

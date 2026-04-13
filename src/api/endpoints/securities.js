@@ -237,13 +237,13 @@ export const securitiesApi = {
   return api.post('/orders', {
     account_number: data.accountNumber,
     listing_id:     data.listingId,
-    direction:      'BUY',
+    direction:      data.direction ?? 'BUY',
     order_type:     data.orderType ?? 'MARKET',
     quantity:       data.quantity,
-    all_or_none:    false,
-    margin:         false,
+    all_or_none:    data.allOrNone ?? false,
+    margin:         data.isMargin ?? false,
     limit_value:    data.limitValue ?? 0,
-    stop_value:     data.stopValue  ?? 0,
+    stop_value:     data.stopValue ?? 0,
   });
 }
 };

@@ -14,6 +14,7 @@ import styles from './ClientSubPage.module.css';
 import secStyles from './ClientSecurities.module.css';
 import { clientApi } from '../../api/endpoints/client';
 import { accountsApi } from '../../api/endpoints/accounts';
+import { loansApi } from '../../api/endpoints/loans';
 
 
 function applyFilters(list, filters, search) {
@@ -66,6 +67,8 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
   const [afterHours, setAfterHours] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
+  const [allOrNone, setAllOrNone] = useState(false);
+  const [isMargin, setIsMargin] = useState(false);
 
   const clientId = useAuthStore(s => s.user?.client_id ?? s.user?.id);
   // Zaposleni koriste bankine račune, klijenti koriste svoje lične račune
@@ -74,6 +77,30 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
     [isEmployee, clientId]
   );
   const accounts = Array.isArray(accountsData) ? accountsData : accountsData?.data ?? [];
+
+  const { data: loansData, loading: loansLoading } = useFetch(
+    () => {
+      if (!clientId || isEmployee) {
+        return Promise.resolve([]);
+      }
+      return loansApi.getMyLoans(clientId);
+    },
+    [clientId, isEmployee]
+  );
+
+  const loansRaw = Array.isArray(loansData)
+    ? loansData
+    : loansData?.data ?? [];
+
+  const approvedLoans = loansRaw.filter(
+    (loan) => String(loan.status ?? '').toUpperCase() === 'APPROVED'
+  );
+
+  const approvedLoanAmount = approvedLoans.reduce((sum, loan) => {
+    return sum + Number(loan.amount ?? 0);
+  }, 0);
+
+  const loadingLoans = !isEmployee && loansLoading;
 
   if (!security) return null;
 
@@ -101,6 +128,26 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
     }
   }
 
+  function getRequiredMarginAmount(quantityValue) {
+    const qtyNumber = Number(quantityValue || 0);
+
+    const initialMargin =
+      Number(security.initialMarginCost ?? security.initial_margin_cost);
+
+    if (!Number.isNaN(initialMargin) && initialMargin > 0) {
+      return initialMargin * qtyNumber;
+    }
+
+    const maintenanceMargin =
+      Number(security.maintenanceMargin ?? security.maintenance_margin);
+
+    if (!Number.isNaN(maintenanceMargin) && maintenanceMargin > 0) {
+      return maintenanceMargin * 1.1 * qtyNumber;
+    }
+
+    return security.price * qtyNumber;
+  }
+
   function validate() {
     setError('');
     // Block orders on expired futures contracts
@@ -126,11 +173,44 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
     }
 
     // Provera sredstava
-    if (selectedAccount) {
-      const balance = selectedAccount.balance ?? selectedAccount.available_balance ?? 0;
-      const estimatedTotal = security.price * n;
+    const balance = selectedAccount ? Number(selectedAccount.balance ?? selectedAccount.available_balance ?? 0): 0;
+
+    const estimatedTotal = security.price * n;
+
+    if (isMargin) {
+      const requiredMarginAmount = getRequiredMarginAmount(n);
+
+      if (!isEmployee) {
+        const hasEnoughLoan = approvedLoanAmount >= requiredMarginAmount;
+        const hasEnoughCash = balance >= requiredMarginAmount;
+
+        if (!hasEnoughLoan && !hasEnoughCash) {
+          setError(
+            `Margin order nije dozvoljen. Potrebno je da odobren zajam ili stanje računa pokrije najmanje ${requiredMarginAmount.toLocaleString('sr-RS', {
+              minimumFractionDigits: 2,
+            })}.`
+          );
+          return false;
+        }
+      } else {
+        if (balance < requiredMarginAmount) {
+          setError(
+            `Margin order nije dozvoljen. Zaposleni mora imati dovoljno sredstava na izabranom računu: najmanje ${requiredMarginAmount.toLocaleString('sr-RS', {
+              minimumFractionDigits: 2,
+            })}.`
+          );
+          return false;
+        }
+      }
+    } else {
       if (balance < estimatedTotal) {
-        setError(`Nedovoljno sredstava na računu. Stanje: ${balance.toLocaleString('sr-RS', { minimumFractionDigits: 2 })}, potrebno: ${estimatedTotal.toLocaleString('sr-RS', { minimumFractionDigits: 2 })}`);
+        setError(
+          `Nedovoljno sredstava na računu. Stanje: ${balance.toLocaleString('sr-RS', {
+            minimumFractionDigits: 2,
+          })}, potrebno: ${estimatedTotal.toLocaleString('sr-RS', {
+            minimumFractionDigits: 2,
+          })}`
+        );
         return false;
       }
     }
@@ -150,12 +230,15 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
 
     try {
       const result = await securitiesApi.buy({
-        listingId:     security.id,
-        accountNumber: accountNumber,
-        quantity:      Number(qty),
-        orderType:     orderType,
-        limitValue:    needsLimit ? Number(limitValue) : 0,
-        stopValue:     needsStop  ? Number(stopValue)  : 0,
+        listingId: security.id,
+        accountNumber,
+        quantity: Number(qty),
+        orderType,
+        direction: activeTab === 'SELL' ? 'SELL' : 'BUY', // only if you support sell elsewhere
+        limitValue: needsLimit ? Number(limitValue) : 0,
+        stopValue: needsStop ? Number(stopValue) : 0,
+        allOrNone,
+        isMargin,
       });
 
       setAfterHours(result?.after_hours === true);
@@ -213,6 +296,29 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
                 <span style={{ color: 'var(--tx-2)' }}>Tip ordera:</span>
                 <strong>{ORDER_TYPES.find(t => t.value === orderType)?.label}</strong>
               </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--tx-2)' }}>AON:</span>
+                <strong>{allOrNone ? 'Da' : 'Ne'}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--tx-2)' }}>Margin:</span>
+                <strong>{isMargin ? 'Da' : 'Ne'}</strong>
+              </div>
+
+              {isMargin && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--tx-2)' }}>Required margin:</span>
+                  <strong>
+                    {getRequiredMarginAmount(qty).toLocaleString('sr-RS', {
+                      minimumFractionDigits: 2,
+                    })}{' '}
+                    {security.currency}
+                  </strong>
+                </div>
+              )}
+
               {isMarket && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--tx-2)' }}>Cena:</span>
@@ -291,6 +397,44 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
               {isMarket && (
                 <p style={{ fontSize: 12, color: 'var(--tx-3)', margin: '4px 0 0', fontStyle: 'italic' }}>
                   Koristi se trenutna tržišna (market) cena.
+                </p>
+              )}
+            </div>
+
+            <div className={styles.formField}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={allOrNone}
+                  onChange={(e) => setAllOrNone(e.target.checked)}
+                />
+                All or None (AON)
+              </label>
+              <p style={{ fontSize: 12, color: 'var(--tx-3)', margin: '4px 0 0' }}>
+                Order će biti izvršen samo u celini, ne delimično.
+              </p>
+            </div>
+
+            <div className={styles.formField}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={isMargin}
+                  onChange={(e) => setIsMargin(e.target.checked)}
+                />
+                Margin
+              </label>
+              <p style={{ fontSize: 12, color: 'var(--tx-3)', margin: '4px 0 0' }}>
+                Margin order koristi odobrene zajmove ako su ispunjeni uslovi.
+              </p>
+
+              {!isEmployee && (
+                <p style={{ fontSize: 12, color: 'var(--tx-3)', margin: '4px 0 0' }}>
+                  {loadingLoans
+                    ? 'Učitavanje odobrenih zajmova...'
+                    : `Odobren zajam ukupno: ${approvedLoanAmount.toLocaleString('sr-RS', {
+                        minimumFractionDigits: 2,
+                      })}`}
                 </p>
               )}
             </div>

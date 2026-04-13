@@ -51,6 +51,10 @@ export function normalizeOrder(raw) {
     settlementDate: raw.settlement_date ?? raw.settlementDate ?? null,
     afterHours: raw.after_hours ?? raw.afterHours ?? false,
     isDone: raw.is_done ?? raw.isDone ?? false,
+
+    allOrNone: raw.all_or_none ?? raw.allOrNone ?? false,
+    isMargin: raw.margin ?? raw.isMargin ?? false,
+
     canApprove: false,
     canDecline: false,
     canCancel: false,

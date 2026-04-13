@@ -173,45 +173,47 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
     }
 
     // Provera sredstava
-    const balance = selectedAccount ? Number(selectedAccount.balance ?? selectedAccount.available_balance ?? 0): 0;
+    if (!selectedAccount) {
+      const balance = selectedAccount ? Number(selectedAccount.balance ?? selectedAccount.available_balance ?? 0): 0;
 
-    const estimatedTotal = security.price * n;
+      const estimatedTotal = security.price * n;
 
-    if (isMargin) {
-      const requiredMarginAmount = getRequiredMarginAmount(n);
+      if (isMargin) {
+        const requiredMarginAmount = getRequiredMarginAmount(n);
 
-      if (!isEmployee) {
-        const hasEnoughLoan = approvedLoanAmount >= requiredMarginAmount;
-        const hasEnoughCash = balance >= requiredMarginAmount;
+        if (!isEmployee) {
+          const hasEnoughLoan = approvedLoanAmount >= requiredMarginAmount;
+          const hasEnoughCash = balance >= requiredMarginAmount;
 
-        if (!hasEnoughLoan && !hasEnoughCash) {
-          setError(
-            `Margin order nije dozvoljen. Potrebno je da odobren zajam ili stanje računa pokrije najmanje ${requiredMarginAmount.toLocaleString('sr-RS', {
-              minimumFractionDigits: 2,
-            })}.`
-          );
-          return false;
+          if (!hasEnoughLoan && !hasEnoughCash) {
+            setError(
+              `Margin order nije dozvoljen. Potrebno je da odobren zajam ili stanje računa pokrije najmanje ${requiredMarginAmount.toLocaleString('sr-RS', {
+                minimumFractionDigits: 2,
+              })}.`
+            );
+            return false;
+          }
+        } else {
+          if (balance < requiredMarginAmount) {
+            setError(
+              `Margin order nije dozvoljen. Zaposleni mora imati dovoljno sredstava na izabranom računu: najmanje ${requiredMarginAmount.toLocaleString('sr-RS', {
+                minimumFractionDigits: 2,
+              })}.`
+            );
+            return false;
+          }
         }
       } else {
-        if (balance < requiredMarginAmount) {
+        if (balance < estimatedTotal) {
           setError(
-            `Margin order nije dozvoljen. Zaposleni mora imati dovoljno sredstava na izabranom računu: najmanje ${requiredMarginAmount.toLocaleString('sr-RS', {
+            `Nedovoljno sredstava na računu. Stanje: ${balance.toLocaleString('sr-RS', {
               minimumFractionDigits: 2,
-            })}.`
+            })}, potrebno: ${estimatedTotal.toLocaleString('sr-RS', {
+              minimumFractionDigits: 2,
+            })}`
           );
           return false;
         }
-      }
-    } else {
-      if (balance < estimatedTotal) {
-        setError(
-          `Nedovoljno sredstava na računu. Stanje: ${balance.toLocaleString('sr-RS', {
-            minimumFractionDigits: 2,
-          })}, potrebno: ${estimatedTotal.toLocaleString('sr-RS', {
-            minimumFractionDigits: 2,
-          })}`
-        );
-        return false;
       }
     }
 
@@ -234,7 +236,7 @@ function OrderModal({ security, activeTab, isEmployee, onClose }) {
         accountNumber,
         quantity: Number(qty),
         orderType,
-        direction: activeTab === 'SELL' ? 'SELL' : 'BUY', // only if you support sell elsewhere
+        direction: 'BUY',
         limitValue: needsLimit ? Number(limitValue) : 0,
         stopValue: needsStop ? Number(stopValue) : 0,
         allOrNone,

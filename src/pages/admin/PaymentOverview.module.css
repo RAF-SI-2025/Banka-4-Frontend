@@ -96,3 +96,30 @@ body {
   height: 2px;
   background: var(--mono);
 }
+
+@media (max-width: 768px) {
+  .content {
+    padding: 70px 12px 24px 12px;
+  }
+  .filterBox {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .mainTable th,
+  .mainTable td {
+    padding: 12px 10px;
+    font-size: 12px;
+  }
+  .tabsContainer {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tableCard {
+    overflow-x: auto;
+  }
+  .mainTable {
+    min-width: 560px;
+  }
+}

@@ -13,6 +13,7 @@ import styles             from './ActuariesPage.module.css';
 const EMPTY_FILTERS = { email: '', first_name: '', last_name: '', position: '' };
 
 export default function ActuariesPage() {
+  useEffect(() => { document.title = 'RAFBank | Aktuari'; }, []);
   const pageRef = useRef(null);
 
   const [allActuaries, setAllActuaries] = useState([]);

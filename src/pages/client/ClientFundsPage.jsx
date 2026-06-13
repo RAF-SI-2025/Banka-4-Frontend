@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 
@@ -14,6 +14,7 @@ import styles from './ClientFundsPage.module.css';
 import { getErrorMessage } from '../../utils/apiError';
 
 export default function ClientFundsPage() {
+  useEffect(() => { document.title = 'RAFBank | Investicioni fondovi'; }, []);
   const pageRef = useRef(null);
   const navigate = useNavigate();
 

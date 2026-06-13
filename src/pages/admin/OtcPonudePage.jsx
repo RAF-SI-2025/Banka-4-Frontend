@@ -25,6 +25,7 @@ function getRowClass(offer) {
 }
 
 export default function OtcPonudePage() {
+  useEffect(() => { document.title = 'RAFBank | OTC Ponude'; }, []);
   const pageRef = useRef(null);
   const user    = useAuthStore(s => s.user);
 

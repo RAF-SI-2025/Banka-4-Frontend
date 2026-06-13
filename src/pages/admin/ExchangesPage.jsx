@@ -32,6 +32,7 @@ function isExchangeOpen(exchange) {
 }
 
 export default function ExchangesPage() {
+  useEffect(() => { document.title = 'RAFBank | Kursna lista'; }, []);
   const ref = useRef(null);
   const [toggling, setToggling] = useState(null);
   const [exchanges, setExchanges] = useState([]);

@@ -9,6 +9,7 @@ import Alert                    from '../../components/ui/Alert';
 import styles                   from './CreateFundPage.module.css';
 
 export default function CreateFundPage() {
+  useEffect(() => { document.title = 'RAFBank | Novi fond'; }, []);
   const navigate  = useNavigate();
   const pageRef   = useRef(null);
   const user      = useAuthStore(s => s.user);

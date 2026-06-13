@@ -14,6 +14,7 @@ import { cardsApi }                           from '../../api/endpoints/cards';
 import styles                                 from './CardsPortal.module.css';
 
 export default function CardsPortal() {
+  useEffect(() => { document.title = 'RAFBank | Portal kartica'; }, []);
   const pageRef = useRef(null);
 
   const [filters, setFilters] = useState({

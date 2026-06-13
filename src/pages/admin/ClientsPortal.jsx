@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import gsap                                   from 'gsap';
 import { useFetch }                           from '../../hooks/useFetch';
 import { clientsApi }                         from '../../api/endpoints/clients';
@@ -10,6 +10,7 @@ import ClientEditForm                         from '../../features/clients/Clien
 import styles                                 from './ClientsPortal.module.css';
 
 export default function ClientsPortal() {
+  useEffect(() => { document.title = 'RAFBank | Portal klijenata'; }, []);
   const pageRef = useRef(null);
 
   const { data, loading, error, refetch } = useFetch(() => clientsApi.getAll());

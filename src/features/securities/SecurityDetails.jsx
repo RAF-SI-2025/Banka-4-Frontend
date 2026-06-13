@@ -2,6 +2,7 @@ import { useRef, useLayoutEffect, useState, useMemo } from 'react';
 import gsap from 'gsap';
 import OptionTable from './OptionTable';
 import WatchlistButton from './WatchlistButton';
+import PriceAlertButton from './PriceAlertButton';
 import styles from './SecurityDetails.module.css';
 
 const PERIODS = ['1D', '1W', '1M', '1Y', '5Y'];
@@ -133,6 +134,7 @@ export default function SecurityDetails({ security, isEmployee, onAction, onRefr
               {actionLabel}
             </button>
             <WatchlistButton security={security} />
+            <PriceAlertButton security={security} />
             <div className={styles.refreshGroup}>
               <button
                 className={styles.refreshBtn}

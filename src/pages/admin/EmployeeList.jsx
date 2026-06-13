@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect }  from 'react';
+import { useState, useRef, useLayoutEffect, useEffect }  from 'react';
 import { useNavigate, Link }                   from 'react-router-dom';
 import gsap                                    from 'gsap';
 import { useFetch }                            from '../../hooks/useFetch';
@@ -13,6 +13,7 @@ import EmployeeFilters                         from '../../features/employees/Em
 import styles                                  from './EmployeeList.module.css';
 
 export default function EmployeeList() {
+  useEffect(() => { document.title = 'RAFBank | Zaposleni'; }, []);
   const navigate = useNavigate();
   const pageRef  = useRef(null);
   const { can }  = usePermissions();

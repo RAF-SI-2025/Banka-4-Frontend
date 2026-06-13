@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import gsap from 'gsap';
 import { useFetch } from '../../hooks/useFetch';
 import { paymentsApi } from '../../api/endpoints/payments';
@@ -12,6 +12,7 @@ import TransactionDetailsModal from '../../features/payments/TransactionDetailsM
 import styles from './EmployeeList.module.css';
 
 export default function PaymentOverview() {
+  useEffect(() => { document.title = 'RAFBank | Pregled plaćanja'; }, []);
   const pageRef = useRef(null);
   const clientId = useAuthStore(s => s.user?.id);
   useLayoutEffect(() => {

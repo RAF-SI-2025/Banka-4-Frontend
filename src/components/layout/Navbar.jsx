@@ -4,6 +4,7 @@ import { useAuthStore }                 from '../../store/authStore';
 import { usePermissions }               from '../../hooks/usePermissions';
 import ChangePasswordModal              from './ChangePasswordModal';
 import WatchlistWidget                  from './WatchlistWidget';
+import PriceAlertsWidget               from './PriceAlertsWidget';
 import { useWatchlistStore }            from '../../store/watchlistStore';
 import styles                           from './Navbar.module.css';
 
@@ -199,6 +200,7 @@ export default function Navbar() {
 
         <div className={styles.right}>
           {isAgent && <WatchlistWidget />}
+          {isAgent && <PriceAlertsWidget />}
           {canAny('employee.create', 'employee.update', 'employee.delete') && (
             <span className={styles.adminBadge}>Administrator</span>
           )}

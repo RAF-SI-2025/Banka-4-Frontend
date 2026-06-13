@@ -15,6 +15,7 @@ function fmt(amount, currency) {
 }
 
 export default function CreateTransfer() {
+    useEffect(() => { document.title = 'RAFBank | Novi transfer'; }, []);
     const pageRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();

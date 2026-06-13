@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect } from 'react';
+import { useRef, useLayoutEffect, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { useFetch } from '../../hooks/useFetch';
@@ -19,6 +19,7 @@ function InfoRow({ label, value }) {
 }
 
 export default function ClientDetails() {
+  useEffect(() => { document.title = 'RAFBank | Detalji klijenta'; }, []);
   const { id } = useParams();
   const navigate = useNavigate();
   const pageRef = useRef(null);

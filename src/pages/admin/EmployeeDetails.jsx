@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect }  from 'react';
+import { useState, useRef, useLayoutEffect, useEffect }  from 'react';
 import { useParams, Link }                      from 'react-router-dom';
 import gsap                                    from 'gsap';
 import { useFetch }                            from '../../hooks/useFetch';
@@ -21,6 +21,7 @@ const ALL_PERMISSIONS = [
 ];
 
 export default function EmployeeDetails() {
+  useEffect(() => { document.title = 'RAFBank | Detalji zaposlenog'; }, []);
   const { id }   = useParams();
   const pageRef  = useRef(null);
   const { can }  = usePermissions();

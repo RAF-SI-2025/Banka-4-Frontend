@@ -7,6 +7,7 @@ import Toast from '../ui/Toast';
 import { useOtcNotifStore } from '../../store/otcNotificationsStore';
 import { useOtcOfferPolling } from '../../hooks/useOtcOfferPolling';
 import WatchlistWidget from './WatchlistWidget';
+import PriceAlertsWidget from './PriceAlertsWidget';
 import { useWatchlistStore } from '../../store/watchlistStore';
 /**
  * Zajednički header za sve klijentske stranice.
@@ -36,9 +37,11 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
 
   const [showTransfersMenu, setShowTransfersMenu] = useState(false);
   const [showPaymentsMenu,  setShowPaymentsMenu]  = useState(false);
+  const [showTrzisteMenu,   setShowTrzisteMenu]   = useState(false);
 
   const transfersRef = useRef(null);
   const paymentsRef  = useRef(null);
+  const trzisteRef   = useRef(null);
 
   const { canAny } = usePermissions();
   const canTrade = canAny('trade', 'trading', 'trading.margin');
@@ -49,6 +52,8 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
         setShowTransfersMenu(false);
       if (paymentsRef.current && !paymentsRef.current.contains(e.target))
         setShowPaymentsMenu(false);
+      if (trzisteRef.current && !trzisteRef.current.contains(e.target))
+        setShowTrzisteMenu(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -66,6 +71,14 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
     { label: 'Primaoci plaćanja', path: '/client/recipients' },
     { label: 'Pregled plaćanja',  path: '/client/payments' },
   ];
+
+  const trzisteSubItems = [
+    { label: 'Moji orderi', path: '/orders/my' },
+    { label: 'DTC',         path: '/client/dtc' },
+    { label: 'Fondovi',     path: '/investment-funds' },
+  ];
+
+  const trzisteActive = ['dtc', 'orders', 'fondovi'].includes(activeNav);
 
   return (
     <header className={styles.header}>
@@ -143,34 +156,40 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
         >
           Hartije
         </button>
-        <button
-          className={`${styles.headerNavBtn} ${activeNav === 'orders' ? styles.headerNavBtnActive : ''}`}
-          onClick={() => navigate('/orders/my')}
-        >
-          Moji orderi
-        </button>
-        <button
-          className={`${styles.headerNavBtn} ${activeNav === 'dtc' ? styles.headerNavBtnActive : ''}`}
-          onClick={() => navigate('/client/dtc')}
-        >
-          DTC
-        </button>
 
-        {canTrade && (
+        {/* Tržište dropdown */}
+        <div className={styles.payDropdownWrap} ref={trzisteRef}>
           <button
-            className={`${styles.headerNavBtn} ${activeNav === 'otc' ? styles.headerNavBtnActive : ''}`}
-            onClick={() => navigate('/otc')}
+            className={`${styles.headerNavBtn} ${trzisteActive ? styles.headerNavBtnActive : ''}`}
+            onClick={() => setShowTrzisteMenu(p => !p)}
           >
-            OTC Portal
+            Tržište
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 4 }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
           </button>
-        )}
-
-        <button
-          className={`${styles.headerNavBtn} ${activeNav === 'fondovi' ? styles.headerNavBtnActive : ''}`}
-          onClick={() => navigate('/investment-funds')}
-        >
-          Fondovi
-        </button>
+          {showTrzisteMenu && (
+            <div className={styles.payDropdownMenu}>
+              {trzisteSubItems.map(item => (
+                <button
+                  key={item.label}
+                  className={styles.payDropdownItem}
+                  onClick={() => { navigate(item.path); setShowTrzisteMenu(false); }}
+                >
+                  {item.label}
+                </button>
+              ))}
+              {canTrade && (
+                <button
+                  className={styles.payDropdownItem}
+                  onClick={() => { navigate('/otc'); setShowTrzisteMenu(false); }}
+                >
+                  OTC Portal
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Plaćanja dropdown */}
         <div className={styles.payDropdownWrap} ref={paymentsRef}>
@@ -207,6 +226,7 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
       </nav>
 
       <WatchlistWidget />
+      <PriceAlertsWidget />
 
       <button
         type="button"

@@ -104,6 +104,7 @@ const FILTERS = [
 ];
 
 export default function SupervisorOrdersPage() {
+  useEffect(() => { document.title = 'RAFBank | Supervizorski orderi'; }, []);
   const pageRef = useRef(null);
   const user = useAuthStore((s) => s.user);
 

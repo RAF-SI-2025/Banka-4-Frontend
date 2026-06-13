@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useSearchParams, Link }              from 'react-router-dom';
 import gsap                                   from 'gsap';
 import { authApi }                            from '../../api/endpoints/auth';
@@ -38,6 +38,7 @@ function StepIndicator({ step }) {
 }
 
 export default function ResetPassword() {
+  useEffect(() => { document.title = 'RAFBank | Reset lozinke'; }, []);
   const [searchParams] = useSearchParams();
   const urlToken       = searchParams.get('token');
   const cardRef        = useRef(null);

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../../components/layout/Navbar';
+import ClientHeader from '../../components/layout/ClientHeader';
+import { useAuthStore } from '../../store/authStore';
 import Spinner from '../../components/ui/Spinner';
 import { ordersApi } from '../../api/endpoints/orders';
 import styles from './MyOrdersPage.module.css';
@@ -16,6 +18,9 @@ function formatDateTime(v) {
 
 
 export default function MyOrdersPage() {
+    useEffect(() => { document.title = 'RAFBank | Moji orderi'; }, []);
+    const user = useAuthStore(s => s.user);
+    const isClient = user?.identity_type === 'client';
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -100,7 +105,7 @@ export default function MyOrdersPage() {
 
     return (
         <div className={styles.wrap}>
-            <Navbar />
+            {isClient ? <ClientHeader /> : <Navbar />}
 
             <div className={styles.header}>
                 <h1 className={styles.title}>Moji orderi</h1>

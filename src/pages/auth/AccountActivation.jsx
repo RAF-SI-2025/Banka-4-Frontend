@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useSearchParams, Link }              from 'react-router-dom';
 import gsap                                   from 'gsap';
 import { authApi }                            from '../../api/endpoints/auth';
@@ -7,6 +7,7 @@ import Alert                                  from '../../components/ui/Alert';
 import styles                                 from './AccountActivation.module.css';
 
 export default function AccountActivation() {
+  useEffect(() => { document.title = 'RAFBank | Aktivacija naloga'; }, []);
   const [searchParams] = useSearchParams();
   const urlToken       = searchParams.get('token');
   const cardRef        = useRef(null);

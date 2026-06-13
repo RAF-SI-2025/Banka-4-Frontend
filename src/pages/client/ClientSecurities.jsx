@@ -676,6 +676,7 @@ function OrderModal({ security, activeTab: _activeTab, isEmployee, isSupervisor,
 }
 
 export default function ClientSecurities() {
+  useEffect(() => { document.title = 'RAFBank | Hartije od vrednosti'; }, []);
   const pageRef = useRef(null);
   const location = useLocation();
   const user = useAuthStore(s => s.user);

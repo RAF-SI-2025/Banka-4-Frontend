@@ -27,6 +27,7 @@ const VIEW_MODE = {
 };
 
 export default function CardsPage({ portalType = PORTAL_TYPE.CLIENT }) {
+  useEffect(() => { document.title = 'RAFBank | Kartice'; }, []);
   const pageRef = useRef(null);
   const user = useAuthStore((s) => s.user);
 

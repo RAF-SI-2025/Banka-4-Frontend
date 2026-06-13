@@ -154,6 +154,7 @@ function formatAmount(n, currency = 'RSD') {
 }
 
 export default function NewPayment() {
+  useEffect(() => { document.title = 'RAFBank | Novo plaćanje'; }, []);
   const pageRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -206,6 +207,8 @@ export default function NewPayment() {
   }, [prefilledFrom]);
 
   useLayoutEffect(() => {
+    const elements = pageRef.current?.querySelectorAll('.sub-card');
+    if (!elements || elements.length === 0) return;
     const ctx = gsap.context(() => {
       gsap.from('.sub-card', { opacity: 0, y: 20, duration: 0.45, ease: 'power2.out', stagger: 0.07 });
     }, pageRef);

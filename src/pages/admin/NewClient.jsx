@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useNavigate }                        from 'react-router-dom';
 import gsap                                   from 'gsap';
 import { clientsApi }                         from '../../api/endpoints/clients';
@@ -10,6 +10,7 @@ import styles                                 from './NewEmployee.module.css';
 const GENDER_OPTIONS = ['M', 'F'];
 
 export default function NewClient() {
+  useEffect(() => { document.title = 'RAFBank | Novi klijent'; }, []);
   const navigate = useNavigate();
   const pageRef  = useRef(null);
 

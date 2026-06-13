@@ -1090,6 +1090,7 @@ function SklopljeniUgovori() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OtcPortalPage() {
+  useEffect(() => { document.title = 'RAFBank | OTC Portal'; }, []);
   const pageRef = useRef(null);
   const user = useAuthStore(s => s.user);
   const { isSupervisor } = usePermissions();

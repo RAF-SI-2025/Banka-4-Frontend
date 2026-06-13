@@ -181,6 +181,7 @@ function normalizeEntry(entry) {
 }
 
 export default function AuditLogPage() {
+  useEffect(() => { document.title = 'RAFBank | Audit log'; }, []);
   const pageRef = useRef(null);
   const [logs, setLogs] = useState([]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);

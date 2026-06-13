@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState } from 'react';
+import { useRef, useLayoutEffect, useState, useEffect } from 'react';
 import { useNavigate }  from 'react-router-dom';
 import gsap             from 'gsap';
 import { useAuthStore } from '../../store/authStore';
@@ -32,6 +32,7 @@ function shortAccount(num) {
 }
 
 export default function ClientTransferHistory() {
+  useEffect(() => { document.title = 'RAFBank | Istorija transfera'; }, []);
   const pageRef  = useRef(null);
   const navigate = useNavigate();
   const clientId = useAuthStore(s => s.user?.client_id ?? s.user?.id);

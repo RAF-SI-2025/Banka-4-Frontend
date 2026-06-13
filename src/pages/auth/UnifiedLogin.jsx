@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useNavigate, Link }                  from 'react-router-dom';
 import gsap                                   from 'gsap';
 import { authApi }                            from '../../api/endpoints/auth';
@@ -7,6 +7,7 @@ import Alert                                  from '../../components/ui/Alert';
 import styles                                 from './Login.module.css';
 
 export default function UnifiedLogin() {
+  useEffect(() => { document.title = 'RAFBank | Prijava'; }, []);
   const navigate = useNavigate();
   const setAuth  = useAuthStore(s => s.setAuth);
   const cardRef  = useRef(null);

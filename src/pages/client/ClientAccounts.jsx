@@ -299,6 +299,7 @@ function DetailRow({ label, value, highlight }) {
    MAIN PAGE
    ═══════════════════════════════════════════ */
 export default function ClientAccounts() {
+  useEffect(() => { document.title = 'RAFBank | Moji računi'; }, []);
   const pageRef = useRef(null);
   const navigate = useNavigate();
   const clientId = useAuthStore(s => s.user?.client_id ?? s.user?.id);

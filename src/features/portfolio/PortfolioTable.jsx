@@ -22,6 +22,7 @@ export default function PortfolioTable({ assets, isAdmin, onSell, onPublish, onV
             <th>TICKER</th>
             <th>TYPE</th>
             <th>AMOUNT</th>
+            <th>AMOUNT PUBLIC</th>
             <th>PRICE</th>
             <th>PROFIT</th>
             <th>DIVIDEND YIELD</th>
@@ -33,7 +34,7 @@ export default function PortfolioTable({ assets, isAdmin, onSell, onPublish, onV
         <tbody>
           {paged.length === 0 && (
             <tr>
-              <td colSpan="9" style={{ textAlign: 'center', padding: '24px', color: 'var(--tx-3)' }}>                
+              <td colSpan="10" style={{ textAlign: 'center', padding: '24px', color: 'var(--tx-3)' }}>                
                 Nema hartija za prikaz.
               </td>
             </tr>
@@ -45,6 +46,7 @@ export default function PortfolioTable({ assets, isAdmin, onSell, onPublish, onV
                 <td className={styles.ticker}>{asset.ticker}</td>
                 <td style={{ fontSize: 12, color: 'var(--tx-2)' }}>{asset.type}</td>
                 <td>{asset.amount}</td>
+                <td>{asset.public_amount ?? asset.available_amount ?? '—'}</td>
                 <td>{asset.pricePerUnitRSD != null
                   ? `${Number(asset.pricePerUnitRSD).toLocaleString('sr-RS', { minimumFractionDigits: 2 })} RSD`
                   : asset.price != null ? `$${asset.price}` : '—'}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { peerOtcApi, getBankName, isSelfPeer, isMyTurnPeer } from '../../../api/endpoints/peerOtc';
+import { useState, useEffect } from 'react';
+import { peerOtcApi, getBankName, isSelfPeer, isMyTurnPeer, extractPeerName } from '../../../api/endpoints/peerOtc';
 import styles from '../OtcPortalPage.module.css';
 
 const CURRENCIES = ['RSD', 'EUR', 'USD', 'CHF', 'JPY', 'AUD', 'CAD', 'GBP'];
@@ -24,6 +24,7 @@ export default function PeerNegotiationModal({ negotiation, user, onClose, onRef
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [counterpartyName, setCounterpartyName] = useState(null);
 
   const { id, status, offer } = negotiation;
   const rn = id?.routingNumber;
@@ -32,15 +33,24 @@ export default function PeerNegotiationModal({ negotiation, user, onClose, onRef
   const myTurn = isMyTurnPeer(offer, user);
   const amBuyer = isSelfPeer(offer?.buyerId, user);
 
+  useEffect(() => {
+    const counterpartyId = amBuyer ? offer?.sellerId : offer?.buyerId;
+    if (!counterpartyId?.routingNumber || !counterpartyId?.id) return;
+    peerOtcApi.getPeerUser(counterpartyId.routingNumber, counterpartyId.id)
+      .then(res => setCounterpartyName(extractPeerName(res)))
+      .catch(() => {});
+  }, []);
+
   function setField(key, value) {
     setCounterForm(prev => ({ ...prev, [key]: value }));
   }
 
   function getCounterpartyLabel() {
-    if (amBuyer) {
-      return `Prodavac (${getBankName(offer?.sellerId?.routingNumber)})`;
-    }
-    return `Kupac (${getBankName(offer?.buyerId?.routingNumber)})`;
+    const role = amBuyer ? 'Prodavac' : 'Kupac';
+    const bank = getBankName(amBuyer ? offer?.sellerId?.routingNumber : offer?.buyerId?.routingNumber);
+    return counterpartyName
+      ? `${role} — ${counterpartyName} (${bank})`
+      : `${role} (${bank})`;
   }
 
   async function handleAccept() {

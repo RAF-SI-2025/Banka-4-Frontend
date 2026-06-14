@@ -15,8 +15,12 @@ export function isSelfPeer(foreignBankId, user) {
     && String(foreignBankId.id) === String(myId);
 }
 
-export function isMyTurnPeer(offer, user) {
-  return !isSelfPeer(offer?.lastModifiedBy, user);
+export function isMyTurnPeer(offer, _user) {
+  return offer?.lastModifiedBy?.routingNumber !== OUR_ROUTING_NUMBER;
+}
+
+export function extractPeerName(res) {
+  return res?.displayName ?? null;
 }
 
 export const peerOtcApi = {
@@ -28,4 +32,5 @@ export const peerOtcApi = {
   withdrawNegotiation: (rn, id)        => api.delete(`/peer-otc/negotiations/${rn}/${id}`),
   getMyContracts:      ()              => api.get('/peer-otc/contracts'),
   exerciseContract:    (rn, id, acct)  => api.post(`/peer-otc/contracts/${rn}/${id}/exercise`, { accountNumber: acct }),
+  getPeerUser:         (rn, id)        => api.get(`/user/${rn}/${id}`),
 };

@@ -1051,6 +1051,7 @@ function SklopljeniUgovori() {
   const [exerciseLoading, setExerciseLoading] = useState(false);
   const [exerciseError, setExerciseError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [showOtherContracts, setShowOtherContracts] = useState(false);
 
   async function loadContracts() {
     try {
@@ -1186,87 +1187,137 @@ function SklopljeniUgovori() {
         <div className={styles.emptyTable}>
           Nema {filter === 'expired' ? 'isteklih' : 'važećih'} ugovora.
         </div>
-      ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>STOCK</th>
-                <th>AMOUNT</th>
-                <th>STRIKE PRICE</th>
-                <th>PREMIUM</th>
-                <th>SETTLEMENT DATE</th>
-                <th>SELLER INFO</th>
-                <th>PROFIT</th>
-                {filter === 'valid' && <th>AKCIJA</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(contract => (
-                <tr key={contract.otc_option_contract_id} className={isExpired(contract.settlement_date) ? styles.expiredRow : ''}>
-                  <td className={styles.ticker}>{contract.ticker}</td>
-                  <td>{contract.amount}</td>
-                  <td>{contract.strike_price_rsd}</td>
-                  <td>{contract.premium_rsd}</td>
-                  <td>{formatDate(contract.settlement_date)}</td>
-                  <td>Seller #{contract.seller_id}</td>
-                  <td className={contract.profit != null && contract.profit >= 0 ? styles.pos : styles.neg}>
-                    {contract.profit != null
-                      ? `${contract.profit >= 0 ? '+' : ''}${Number(contract.profit).toLocaleString('sr-RS', { minimumFractionDigits: 2 })} RSD`
-                      : '—'}
-                  </td>
-                  {filter === 'valid' && (
-                    <td>
-                      {Number(contract.buyer_id) === Number(partyId) && (
-                        <button className={styles.btnPrimary} onClick={() => openModal(contract)}>
-                          Iskoristi
-                        </button>
-                      )}
-                    </td>
+      ) : (() => {
+        const myContracts       = filtered.filter(c => Number(c.buyer_id) === Number(partyId));
+        const otherContracts    = filtered.filter(c => Number(c.buyer_id) !== Number(partyId));
+        const myPeerContracts   = filteredPeer.filter(c => c.myContract);
+        const otherPeerContracts = filteredPeer.filter(c => !c.myContract);
+        const colSpan = filter === 'valid' ? 8 : 7;
+
+        function renderRegularRow(contract) {
+          return (
+            <tr key={contract.otc_option_contract_id} className={isExpired(contract.settlement_date) ? styles.expiredRow : ''}>
+              <td className={styles.ticker}>{contract.ticker}</td>
+              <td>{contract.amount}</td>
+              <td>{contract.strike_price_rsd}</td>
+              <td>{contract.premium_rsd}</td>
+              <td>{formatDate(contract.settlement_date)}</td>
+              <td>Seller #{contract.seller_id}</td>
+              <td className={contract.profit != null && contract.profit >= 0 ? styles.pos : styles.neg}>
+                {contract.profit != null
+                  ? `${contract.profit >= 0 ? '+' : ''}${Number(contract.profit).toLocaleString('sr-RS', { minimumFractionDigits: 2 })} RSD`
+                  : '—'}
+              </td>
+              {filter === 'valid' && (
+                <td>
+                  {Number(contract.buyer_id) === Number(partyId) && (
+                    <button className={styles.btnPrimary} onClick={() => openModal(contract)}>
+                      Iskoristi
+                    </button>
                   )}
-                </tr>
-              ))}
-              {filteredPeer.map(contract => {
-                const rn = contract.id?.routingNumber;
-                const cId = contract.id?.id;
-                const canExercise = contract.myContract;
-                return (
-                  <tr key={`peer-${rn}-${cId}`} className={isExpired(contract.settlementDate) ? styles.expiredRow : ''}>
-                    <td className={styles.ticker}>
-                      {contract.ticker}
-                      <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', verticalAlign: 'middle' }}>
-                        PEER
-                      </span>
-                    </td>
-                    <td>{contract.amount}</td>
-                    <td>{contract.strikePrice ? `${Number(contract.strikePrice.amount).toFixed(2)} ${contract.strikePrice.currency}` : '—'}</td>
-                    <td>{contract.premium ? `${Number(contract.premium.amount).toFixed(2)} ${contract.premium.currency}` : '—'}</td>
-                    <td>{formatDate(contract.settlementDate)}</td>
-                    <td>Seller {contract.sellerId?.id?.slice(0, 8)}… ({getBankName(contract.sellerId?.routingNumber)})</td>
-                    <td>—</td>
-                    {filter === 'valid' && (
-                      <td>
-                        {canExercise && (
-                          <button
-                            className={styles.btnPrimary}
-                            onClick={() => {
-                              setPeerConfirmModal(contract);
-                              setPeerExerciseAccount('');
-                              setPeerExerciseError('');
-                            }}
-                          >
-                            Iskoristi
-                          </button>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                </td>
+              )}
+            </tr>
+          );
+        }
+
+        function renderPeerRow(contract) {
+          const rn = contract.id?.routingNumber;
+          const cId = contract.id?.id;
+          return (
+            <tr key={`peer-${rn}-${cId}`} className={isExpired(contract.settlementDate) ? styles.expiredRow : ''}>
+              <td className={styles.ticker}>
+                {contract.ticker}
+                <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', verticalAlign: 'middle' }}>
+                  PEER
+                </span>
+              </td>
+              <td>{contract.amount}</td>
+              <td>{contract.strikePrice ? `${Number(contract.strikePrice.amount).toFixed(2)} ${contract.strikePrice.currency}` : '—'}</td>
+              <td>{contract.premium ? `${Number(contract.premium.amount).toFixed(2)} ${contract.premium.currency}` : '—'}</td>
+              <td>{formatDate(contract.settlementDate)}</td>
+              <td>Seller {contract.sellerId?.id?.slice(0, 8)}… ({getBankName(contract.sellerId?.routingNumber)})</td>
+              <td>—</td>
+              {filter === 'valid' && (
+                <td>
+                  {contract.myContract && (
+                    <button
+                      className={styles.btnPrimary}
+                      onClick={() => { setPeerConfirmModal(contract); setPeerExerciseAccount(''); setPeerExerciseError(''); }}
+                    >
+                      Iskoristi
+                    </button>
+                  )}
+                </td>
+              )}
+            </tr>
+          );
+        }
+
+        const thead = (
+          <thead>
+            <tr>
+              <th>STOCK</th>
+              <th>AMOUNT</th>
+              <th>STRIKE PRICE</th>
+              <th>PREMIUM</th>
+              <th>SETTLEMENT DATE</th>
+              <th>SELLER INFO</th>
+              <th>PROFIT</th>
+              {filter === 'valid' && <th>AKCIJA</th>}
+            </tr>
+          </thead>
+        );
+
+        return (
+          <>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                {thead}
+                <tbody>
+                  {myContracts.length === 0 && myPeerContracts.length === 0 && (
+                    <tr><td colSpan={colSpan} className={styles.emptyTable}>Nema vaših ugovora.</td></tr>
+                  )}
+                  {myContracts.map(renderRegularRow)}
+                  {myPeerContracts.map(renderPeerRow)}
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <button
+                onClick={() => setShowOtherContracts(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', padding: '12px 28px',
+                  background: 'none', border: 'none',
+                  borderTop: '1px solid var(--border)',
+                  cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                  color: 'var(--tx-2)', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 10 }}>{showOtherContracts ? '▼' : '▶'}</span>
+                Peer contracts ({otherContracts.length + otherPeerContracts.length})
+              </button>
+              {showOtherContracts && (
+                <div className={styles.tableWrap}>
+                  {otherContracts.length === 0 && otherPeerContracts.length === 0 ? (
+                    <div className={styles.emptyTable}>Nema peer ugovora.</div>
+                  ) : (
+                    <table className={styles.table}>
+                      {thead}
+                      <tbody>
+                        {otherContracts.map(renderRegularRow)}
+                        {otherPeerContracts.map(renderPeerRow)}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
 
       {confirmModal && (
         <ConfirmModal

@@ -32,6 +32,7 @@ function isExchangeOpen(exchange) {
 }
 
 export default function ExchangesPage() {
+  useEffect(() => { document.title = 'RAFBank | Kursna lista'; }, []);
   const ref = useRef(null);
   const [toggling, setToggling] = useState(null);
   const [exchanges, setExchanges] = useState([]);
@@ -141,9 +142,9 @@ export default function ExchangesPage() {
                         <span className={styles.value}>UTC{ex.time_zone >= 0 ? '+' : ''}{ex.time_zone ?? '—'}</span>
                       </div>
                       <div className={styles.infoRow}>
-                        <span className={styles.label}>Trgovanje</span>
+                        <span className={styles.label}>Primena radnog vremena</span>
                         <span className={`${styles.value} ${ex.trading_enabled ? styles.tradingOn : styles.tradingOff}`}>
-                          {ex.trading_enabled ? 'Omogućeno' : 'Onemogućeno'}
+                          {ex.trading_enabled ? 'Uključena' : 'Isključena'}
                         </span>
                       </div>
                     </div>
@@ -156,7 +157,7 @@ export default function ExchangesPage() {
                       >
                         {toggling === ex.mic_code
                           ? 'Čekajte...'
-                          : ex.trading_enabled ? 'Obustavi trgovanje' : 'Omogući trgovanje'
+                          : ex.trading_enabled ? 'Isključi primenu radnog vremena' : 'Uključi primenu radnog vremena'
                         }
                       </button>
                     </div>

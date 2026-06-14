@@ -232,7 +232,7 @@ export default function AccountForm({ form, onChange, errors, companyData, onCom
                 <option value="">Izaberite šifru delatnosti...</option>
                 {workCodes.map(wc => (
                   <option key={wc.id ?? wc.ID} value={wc.id ?? wc.ID}>
-                    {wc.code ?? wc.Code} — {wc.description ?? wc.Description ?? wc.name ?? wc.Name}
+                    {wc.code ?? wc.Code} — {wc.description ?? wc.name ?? wc.Name}
                   </option>
                 ))}
               </select>

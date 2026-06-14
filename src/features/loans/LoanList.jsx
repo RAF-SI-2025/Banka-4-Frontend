@@ -37,6 +37,14 @@ export default function LoanList({ loans, selectedId, onSelectLoan }) {
     return currency ? `${typeName} u ${currency}` : typeName;
   }
 
+  if (sortedLoans.length === 0) {
+    return (
+      <div className={styles.listContainer} style={{ padding: '2rem', textAlign: 'center', color: 'var(--tx-3)', fontSize: 14 }}>
+        Nema aktivnih kredita.
+      </div>
+    );
+  }
+
   return (
     <div ref={ref} className={styles.listContainer}>
       {sortedLoans.map((loan) => (

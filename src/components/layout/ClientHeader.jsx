@@ -7,6 +7,7 @@ import Toast from '../ui/Toast';
 import { useOtcNotifStore } from '../../store/otcNotificationsStore';
 import { useOtcOfferPolling } from '../../hooks/useOtcOfferPolling';
 import WatchlistWidget from './WatchlistWidget';
+import PriceAlertsWidget from './PriceAlertsWidget';
 import { useWatchlistStore } from '../../store/watchlistStore';
 /**
  * Zajednički header za sve klijentske stranice.
@@ -36,12 +37,14 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
 
   const [showTransfersMenu, setShowTransfersMenu] = useState(false);
   const [showPaymentsMenu,  setShowPaymentsMenu]  = useState(false);
+  const [showTrzisteMenu,   setShowTrzisteMenu]   = useState(false);
 
   const transfersRef = useRef(null);
   const paymentsRef  = useRef(null);
+  const trzisteRef   = useRef(null);
 
   const { canAny } = usePermissions();
-  const canTrade = canAny('trading'); // ako vam je to trade permisija
+  const canTrade = canAny('trade', 'trading', 'trading.margin');
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -49,6 +52,8 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
         setShowTransfersMenu(false);
       if (paymentsRef.current && !paymentsRef.current.contains(e.target))
         setShowPaymentsMenu(false);
+      if (trzisteRef.current && !trzisteRef.current.contains(e.target))
+        setShowTrzisteMenu(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -63,10 +68,17 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
 
   const paymentsSubItems = [
     { label: 'Novo plaćanje',     path: '/client/payments/new' },
-    { label: 'Prenos',            path: '/transfers/new' },
     { label: 'Primaoci plaćanja', path: '/client/recipients' },
     { label: 'Pregled plaćanja',  path: '/client/payments' },
   ];
+
+  const trzisteSubItems = [
+    { label: 'Moji orderi', path: '/orders/my' },
+    { label: 'DTC',         path: '/client/dtc' },
+    { label: 'Fondovi',     path: '/investment-funds' },
+  ];
+
+  const trzisteActive = ['dtc', 'orders', 'fondovi'].includes(activeNav);
 
   return (
     <header className={styles.header}>
@@ -87,7 +99,10 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
 
       {/* Nav */}
       <nav className={styles.headerNav}>
-        <button className={styles.headerNavBtn} onClick={() => navigate('/client/accounts')}>
+        <button
+          className={`${styles.headerNavBtn} ${activeNav === 'accounts' ? styles.headerNavBtnActive : ''}`}
+          onClick={() => navigate('/client/accounts')}
+        >
           Računi
         </button>
 
@@ -117,26 +132,64 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
           )}
         </div>
 
-        <button className={styles.headerNavBtn} onClick={() => navigate('/client/exchange')}>Menjačnica</button>
-        <button className={styles.headerNavBtn} onClick={() => navigate('/client/cards')}>Kartice</button>
-        <button className={styles.headerNavBtn} onClick={() => navigate('/client/loans')}>Krediti</button>
-        <button className={styles.headerNavBtn} onClick={() => navigate('/client/securities')}>Hartije</button>
-        <button className={styles.headerNavBtn} onClick={() => navigate('/orders/my')}>Moji orderi</button>
-        <button className={`${styles.headerNavBtn} ${activeNav === 'dtc' ? styles.headerNavBtnActive : ''}`}
-            onClick={() => navigate('/client/dtc')}>DTC</button>
-
-        {canTrade && (
-            <button className={styles.headerNavBtn} onClick={() => navigate('/otc')}>
-              OTC Portal
-            </button>
-        )}
-
         <button
-          className={`${styles.headerNavBtn} ${activeNav === 'fondovi' ? styles.headerNavBtnActive : ''}`}
-          onClick={() => navigate('/investment-funds')}
+          className={`${styles.headerNavBtn} ${activeNav === 'exchange' ? styles.headerNavBtnActive : ''}`}
+          onClick={() => navigate('/client/exchange')}
         >
-          Fondovi
+          Menjačnica
         </button>
+        <button
+          className={`${styles.headerNavBtn} ${activeNav === 'cards' ? styles.headerNavBtnActive : ''}`}
+          onClick={() => navigate('/client/cards')}
+        >
+          Kartice
+        </button>
+        <button
+          className={`${styles.headerNavBtn} ${activeNav === 'loans' ? styles.headerNavBtnActive : ''}`}
+          onClick={() => navigate('/client/loans')}
+        >
+          Krediti
+        </button>
+        <button
+          className={`${styles.headerNavBtn} ${activeNav === 'securities' ? styles.headerNavBtnActive : ''}`}
+          onClick={() => navigate('/client/securities')}
+        >
+          Hartije
+        </button>
+
+        {/* Tržište dropdown */}
+        <div className={styles.payDropdownWrap} ref={trzisteRef}>
+          <button
+            className={`${styles.headerNavBtn} ${trzisteActive ? styles.headerNavBtnActive : ''}`}
+            onClick={() => setShowTrzisteMenu(p => !p)}
+          >
+            Tržište
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 4 }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          {showTrzisteMenu && (
+            <div className={styles.payDropdownMenu}>
+              {trzisteSubItems.map(item => (
+                <button
+                  key={item.label}
+                  className={styles.payDropdownItem}
+                  onClick={() => { navigate(item.path); setShowTrzisteMenu(false); }}
+                >
+                  {item.label}
+                </button>
+              ))}
+              {canTrade && (
+                <button
+                  className={styles.payDropdownItem}
+                  onClick={() => { navigate('/otc'); setShowTrzisteMenu(false); }}
+                >
+                  OTC Portal
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Plaćanja dropdown */}
         <div className={styles.payDropdownWrap} ref={paymentsRef}>
@@ -163,54 +216,34 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
             </div>
           )}
         </div>
+
+        <button
+          className={`${styles.headerNavBtn} ${activeNav === 'portfolio' ? styles.headerNavBtnActive : ''}`}
+          onClick={() => navigate('/client/portfolio')}
+        >
+          Moj Portfolio
+        </button>
       </nav>
 
-      <button
-        className={`${styles.headerNavBtn} ${activeNav === 'portfolio' ? styles.headerNavBtnActive : ''}`}
-        onClick={() => navigate('/client/portfolio')}
-      >
-        Moj Portfolio
-      </button>
-
       <WatchlistWidget />
+      <PriceAlertsWidget />
 
       <button
         type="button"
+        className={styles.notifBtn}
         onClick={() => {
           // ovo resetuje badge kad korisnik "pogleda"
           clear();
           navigate('/otc?tab=AKTIVNE');
-          // ovde idealno navigacija na OTC tab "Aktivne ponude"
-          // ako koristiš react-router: navigate('/otc') ili gde već ide
-        }}
-        style={{
-          position: 'relative',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          padding: 6,
         }}
         title="OTC notifikacije"
       >
-        <span style={{ fontSize: 18 }}>🔔</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
         {otcCount > 0 && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              background: '#ef4444',
-              color: 'white',
-              borderRadius: 999,
-              padding: '1px 6px',
-              fontSize: 11,
-              lineHeight: '16px',
-              minWidth: 18,
-              textAlign: 'center',
-            }}
-          >
-            {otcCount}
-          </span>
+          <span className={styles.notifBadge}>{otcCount}</span>
         )}
       </button>
 

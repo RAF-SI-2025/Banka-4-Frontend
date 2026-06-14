@@ -11,15 +11,14 @@ function pickArray(body: any) {
 }
 
 function loginOnly(email: string, password: string) {
-  return cy.request('POST', `${AUTH_API}/auth/login`, { email, password }).then((res) => {
-    expect(res.status).to.eq(200);
-    return res.body;
-  });
+  return cy.request('POST', `${AUTH_API}/auth/login`, { email, password });
 }
 
 function loginAndVisit(email: string, password: string, path: string) {
-  return loginOnly(email, password).then((body) => {
-    const { user, token, refresh_token } = body;
+  return loginOnly(email, password).then((res) => {
+    expect(res.status).to.eq(200);
+
+    const { user, token, refresh_token } = res.body;
 
     cy.visit(path, {
       onBeforeLoad(win) {
@@ -30,7 +29,7 @@ function loginAndVisit(email: string, password: string, path: string) {
       },
     });
 
-    return cy.wrap(body);
+    return cy.wrap(res.body);
   });
 }
 
@@ -44,14 +43,6 @@ function getFundId(fund: any) {
 
 function getFundName(fund: any) {
   return fund?.fund_name ?? fund?.name ?? '';
-}
-
-function getFundPercent(fund: any) {
-  return Number(
-    fund?.clients_share_percent ??
-    fund?.client_share_percentage ??
-    0
-  );
 }
 
 function fetchClientFunds(token: string, clientId: string | number) {
@@ -101,6 +92,29 @@ function investInFund(token: string, fundId: string | number, accountNumber: str
   });
 }
 
+function withdrawFromFund(token: string, fundId: string | number, accountNumber: string, amount: number) {
+  return cy.request({
+    method: 'POST',
+    url: `${TRADING_API}/investment-funds/${fundId}/withdraw`,
+    headers: { Authorization: `Bearer ${token}` },
+    body: {
+      account_number: accountNumber,
+      amount,
+    },
+    failOnStatusCode: false,
+  });
+}
+
+function parsePercentFromCardText(cardText: string) {
+  const compact = cardText.replace(/\s+/g, ' ');
+  const match = compact.match(/Procenat:\s*([0-9.,]+)%/i);
+  if (!match) return null;
+
+  const normalized = match[1].replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
 describe('Scenario 45: Procenat fonda klijenta se menja kada admin uplati u isti fond', () => {
   const anaEmail = 'ana.anic@example.com';
   const anaPassword = 'password123';
@@ -108,108 +122,182 @@ describe('Scenario 45: Procenat fonda klijenta se menja kada admin uplati u isti
   const adminEmail = 'admin@raf.rs';
   const adminPassword = 'admin123';
 
+  let rollbackFundId: string | number | null = null;
+  let rollbackAccountNumber = '';
+  let rollbackAmount = 0;
+  let shouldRollback = false;
+  let adminTokenForRollback = '';
+
+  beforeEach(() => {
+    rollbackFundId = null;
+    rollbackAccountNumber = '';
+    rollbackAmount = 0;
+    shouldRollback = false;
+    adminTokenForRollback = '';
+  });
+
+  afterEach(() => {
+    if (!shouldRollback || !rollbackFundId || !rollbackAccountNumber || !rollbackAmount || !adminTokenForRollback) {
+      return;
+    }
+
+    withdrawFromFund(
+      adminTokenForRollback,
+      rollbackFundId,
+      rollbackAccountNumber,
+      rollbackAmount
+    );
+  });
+
   it('procenat klijenta A se smanjuje nakon admin uplate u isti fond', () => {
     let anaToken = '';
-    let anaClientId: string | number;
+    let anaClientId: string | number = '';
     let adminToken = '';
 
-    let targetFundId: string | number;
-    let targetFundName = '';
-    let percentBefore = 0;
+    function pollAnaPortfolio(targetFundName: string, percentBefore: number, attempt = 0): Cypress.Chainable<any> {
+      return loginAndVisit(anaEmail, anaPassword, '/client/portfolio')
+        .then(() => {
+          cy.contains(/^Moji fondovi$/i).click();
 
-    // 1) Login kao Ana i uzmi Alpha Growth Fund
-    loginOnly(anaEmail, anaPassword).then((body) => {
-      anaToken = body.token;
-      anaClientId = getClientId(body.user);
+          return cy.contains(String(targetFundName))
+            .closest('[role="button"]')
+            .invoke('text');
+        })
+        .then((cardText) => {
+          const percentAfter = parsePercentFromCardText(cardText);
 
-      expect(anaClientId, 'Ana mora imati client id').to.exist;
-    });
+          expect(
+            percentAfter,
+            `Procenat mora biti prikazan i nakon admin uplate. Tekst kartice: ${cardText}`
+          ).to.not.equal(null);
 
-    cy.then(() => fetchClientFunds(anaToken, anaClientId)).then((res) => {
-      expect(res.status).to.eq(200);
+          if (Number(percentAfter) < Number(percentBefore)) {
+            return cy.wrap(Number(percentAfter));
+          }
 
-      const funds = pickArray(res.body);
-      expect(funds.length, 'Ana mora imati bar jedan fond').to.be.greaterThan(0);
+          if (attempt >= 8) {
+            throw new Error(`Procenat se nije smanjio. Pre: ${percentBefore}, posle: ${percentAfter}`);
+          }
 
-      const alphaFund = funds.find((f: any) => {
-        const name = getFundName(f).toLowerCase();
-        return name.includes('alpha growth fund');
-      });
+          return cy.wait(1000).then(() => pollAnaPortfolio(targetFundName, percentBefore, attempt + 1));
+        });
+    }
 
-      expect(alphaFund, 'Ana mora imati Alpha Growth Fund').to.exist;
+    return loginOnly(anaEmail, anaPassword)
+      .then((res) => {
+        expect(res.status).to.eq(200);
 
-      targetFundId = getFundId(alphaFund);
-      targetFundName = getFundName(alphaFund);
-      percentBefore = getFundPercent(alphaFund);
+        anaToken = res.body.token;
+        anaClientId = getClientId(res.body.user);
 
-      expect(targetFundId, 'Alpha Growth Fund mora imati id').to.exist;
-      expect(percentBefore, 'Početni procenat mora biti > 0').to.be.greaterThan(0);
-    });
+        expect(anaClientId, 'Ana mora imati client id').to.exist;
 
-    // 2) Login kao admin
-    loginOnly(adminEmail, adminPassword).then((body) => {
-      adminToken = body.token;
-    });
-
-    // 3) Admin ulaže 1000 u isti fond koristeći interni bankovni račun
-    cy.then(() => fetchAllBankAccounts(adminToken)).then((accountsRes) => {
-      expect(accountsRes.status).to.eq(200);
-
-      const bankAccounts = pickArray(accountsRes.body);
-      expect(bankAccounts.length, 'Moraju postojati bankovni računi').to.be.greaterThan(0);
-
-      const bankAccount = findInternalBankAccount(bankAccounts);
-      expect(
-        bankAccount,
-        'Mora postojati interni bankovni račun (AccountType=bank, CompanyID=1)'
-      ).to.exist;
-
-      const accountNumber = getAccountNumber(bankAccount);
-      expect(accountNumber, 'Interni bankovni račun mora imati broj').to.not.equal('');
-
-      return investInFund(adminToken, targetFundId, accountNumber, 2000);
-    }).then((investRes: any) => {
-      expect(
-        [200, 201],
-        `Admin uplata nije uspela: ${JSON.stringify(investRes.body)}`
-      ).to.include(investRes.status);
-    });
-
-    // 4) Poll dok se Ani ne smanji procenat
-    function pollAnaFunds(attempt = 0): Cypress.Chainable {
-      return cy.then(() => fetchClientFunds(anaToken, anaClientId)).then((res) => {
+        return fetchClientFunds(anaToken, anaClientId);
+      })
+      .then((res) => {
         expect(res.status).to.eq(200);
 
         const funds = pickArray(res.body);
-        const updatedFund = funds.find((f: any) => String(getFundId(f)) === String(targetFundId));
+        expect(funds.length, 'Ana mora imati bar jedan fond').to.be.greaterThan(0);
 
-        expect(updatedFund, 'Ciljni fond mora postojati kod Ane').to.exist;
+        const alphaFund = funds.find((f: any) => {
+          const name = getFundName(f).toLowerCase();
+          return name.includes('alpha growth fund');
+        });
 
-        const percentAfter = getFundPercent(updatedFund);
+        expect(alphaFund, 'Ana mora imati Alpha Growth Fund').to.exist;
 
-        if (percentAfter < percentBefore) {
-          expect(percentAfter, 'Procenat klijenta A treba da se smanji').to.be.lessThan(percentBefore);
-          return cy.wrap(updatedFund).as('updatedFund');
-        }
+        const targetFundId = getFundId(alphaFund);
+        const targetFundName = getFundName(alphaFund);
 
-        if (attempt >= 8) {
-          throw new Error(`Procenat se nije smanjio. Pre: ${percentBefore}, posle: ${percentAfter}`);
-        }
+        expect(targetFundId, 'Alpha Growth Fund mora imati id').to.exist;
+        expect(targetFundName, 'Alpha Growth Fund mora imati naziv').to.not.equal('');
 
-        cy.wait(1000);
-        return pollAnaFunds(attempt + 1);
+        cy.wrap(targetFundId).as('targetFundId');
+        cy.wrap(targetFundName).as('targetFundName');
+
+        return loginAndVisit(anaEmail, anaPassword, '/client/portfolio');
+      })
+      .then(() => {
+        cy.contains(/^Moji fondovi$/i).click();
+
+        return cy.get('@targetFundName').then((targetFundName) => {
+          return cy.contains(String(targetFundName))
+            .closest('[role="button"]')
+            .invoke('text');
+        });
+      })
+      .then((cardText) => {
+        const parsed = parsePercentFromCardText(cardText);
+
+        expect(
+          parsed,
+          `Procenat mora biti prikazan na UI kartici fonda. Tekst kartice: ${cardText}`
+        ).to.not.equal(null);
+
+        const percentBefore = Number(parsed);
+        expect(percentBefore, 'Početni procenat mora biti > 0').to.be.greaterThan(0);
+
+        cy.wrap(percentBefore).as('percentBefore');
+
+        return loginOnly(adminEmail, adminPassword);
+      })
+      .then((res) => {
+        expect(res.status).to.eq(200);
+
+        adminToken = res.body.token;
+        adminTokenForRollback = res.body.token;
+
+        return fetchAllBankAccounts(adminToken);
+      })
+      .then((accountsRes) => {
+        expect(accountsRes.status).to.eq(200);
+
+        const bankAccounts = pickArray(accountsRes.body);
+        expect(bankAccounts.length, 'Moraju postojati bankovni računi').to.be.greaterThan(0);
+
+        const bankAccount = findInternalBankAccount(bankAccounts);
+        expect(
+          bankAccount,
+          'Mora postojati interni bankovni račun (AccountType=bank, CompanyID=1)'
+        ).to.exist;
+
+        const accountNumber = getAccountNumber(bankAccount);
+        expect(accountNumber, 'Interni bankovni račun mora imati broj').to.not.equal('');
+
+        rollbackAccountNumber = accountNumber;
+        rollbackAmount = 20000;
+
+        return cy.get('@targetFundId').then((targetFundId: any) => {
+          const fundId = String(targetFundId);
+
+          rollbackFundId = fundId;
+          return investInFund(adminToken, fundId, accountNumber, 20000);
+        });
+      })
+      .then((investRes: any) => {
+        expect(
+          [200, 201],
+          `Admin uplata nije uspela: ${JSON.stringify(investRes.body)}`
+        ).to.include(investRes.status);
+
+        shouldRollback = true;
+
+        return cy.get('@targetFundName').then((targetFundName) => {
+          return cy.get('@percentBefore').then((percentBefore) => {
+            return pollAnaPortfolio(String(targetFundName), Number(percentBefore));
+          });
+        });
+      })
+      .then((updatedPercent) => {
+        expect(Number(updatedPercent)).to.be.greaterThan(0);
+
+        return cy.get('@targetFundName').then((targetFundName) => {
+          return loginAndVisit(anaEmail, anaPassword, '/client/portfolio').then(() => {
+            cy.contains(/^Moji fondovi$/i).click();
+            cy.contains(String(targetFundName)).should('be.visible');
+          });
+        });
       });
-    }
-
-    pollAnaFunds();
-
-    // 5) UI provera da se fond i dalje vidi Ani
-    loginAndVisit(anaEmail, anaPassword, '/portfolio');
-
-    cy.contains(/^Moji fondovi$/i).click();
-
-    cy.get('@updatedFund').then((fund: any) => {
-      cy.contains(getFundName(fund)).should('be.visible');
-    });
   });
 });

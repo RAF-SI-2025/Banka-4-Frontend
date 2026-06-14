@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, useEffect } from 'react';
 import gsap from 'gsap';
 import Navbar from '../../components/layout/Navbar';
 import Alert from '../../components/ui/Alert';
@@ -18,6 +18,7 @@ const ACTION = {
 };
 
 export default function ProfitBankPage() {
+  useEffect(() => { document.title = 'RAFBank | Prihodi banke'; }, []);
   const pageRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState(TAB.ACTUARIES);

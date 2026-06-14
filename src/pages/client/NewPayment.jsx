@@ -154,6 +154,7 @@ function formatAmount(n, currency = 'RSD') {
 }
 
 export default function NewPayment() {
+  useEffect(() => { document.title = 'RAFBank | Novo plaćanje'; }, []);
   const pageRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -185,14 +186,29 @@ export default function NewPayment() {
 
   const fromAccount = accounts.find(a => (a.account_number ?? a.number) === fromAccountNumber);
 
+  const didInitFromAccount = useRef(false);
+
   // init default account
   useEffect(() => {
-    if (accounts.length > 0 && !fromAccountNumber) {
-      setFromAccountNumber(accounts[0]?.account_number ?? accounts[0]?.number ?? '');
+    if (didInitFromAccount.current) return;
+    if (loadingAccounts) return;
+    if (accounts.length === 0) return;
+    if (prefilledFrom) return;
+
+    didInitFromAccount.current = true;
+    setFromAccountNumber(accounts[0]?.account_number ?? accounts[0]?.number ?? '');
+  }, [loadingAccounts, accounts, prefilledFrom]);
+
+  useEffect(() => {
+    if (prefilledFrom) {
+      didInitFromAccount.current = true;
+      setFromAccountNumber(prefilledFrom);
     }
-  }, [accounts]);
+  }, [prefilledFrom]);
 
   useLayoutEffect(() => {
+    const elements = pageRef.current?.querySelectorAll('.sub-card');
+    if (!elements || elements.length === 0) return;
     const ctx = gsap.context(() => {
       gsap.from('.sub-card', { opacity: 0, y: 20, duration: 0.45, ease: 'power2.out', stagger: 0.07 });
     }, pageRef);

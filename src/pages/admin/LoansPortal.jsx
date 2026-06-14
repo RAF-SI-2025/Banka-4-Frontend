@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import gsap                                   from 'gsap';
 import { useFetch }                           from '../../hooks/useFetch';
 import { loansApi }                           from '../../api/endpoints/loans';
@@ -10,6 +10,7 @@ import LoanRateSection                        from '../../features/loans/LoanRat
 import styles                                 from './LoansPortal.module.css';
 
 export default function LoansPortal() {
+  useEffect(() => { document.title = 'RAFBank | Portal kredita'; }, []);
   const pageRef = useRef(null);
 
   const { data, loading, error, refetch } = useFetch(() => loansApi.getRequests());

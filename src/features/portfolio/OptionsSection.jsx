@@ -115,11 +115,11 @@ export default function OptionsSection({ assets = [], canExercise, actId }) {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>TICKER</th>
+              <th>TIKERI</th>
               <th>TIP</th>
-              <th>STRIKE</th>
-              <th>CURRENT</th>
-              <th>SETTLEMENT</th>
+              <th>UDARNA CENA</th>
+              <th>TRENUTNA CENA</th>
+              <th>ISTEK</th>
               <th>STATUS</th>
               {canExercise && <th style={{ textAlign: 'right' }}>AKCIJE</th>}
             </tr>

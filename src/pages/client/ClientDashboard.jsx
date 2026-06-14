@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState } from 'react';
+import { useRef, useLayoutEffect, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { clientApi } from '../../api/endpoints/client';
@@ -117,6 +117,7 @@ function AccountSwitcherModal({ accounts, selected, onSelect, onClose }) {
 }
 
 export default function ClientDashboard() {
+  useEffect(() => { document.title = 'RAFBank | Početna'; }, []);
   const pageRef = useRef(null);
   const navigate = useNavigate();
   const user = useAuthStore(s => s.user);

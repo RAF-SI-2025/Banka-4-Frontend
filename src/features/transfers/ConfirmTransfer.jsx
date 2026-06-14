@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import styles from './transfers.module.css';
 
 export default function ConfirmTransfer() {
+    useEffect(() => { document.title = 'RAFBank | Potvrda transfera'; }, []);
     const navigate = useNavigate();
     const { state } = useLocation();
     const clientId = useAuthStore(s => s.user?.client_id ?? s.user?.id);

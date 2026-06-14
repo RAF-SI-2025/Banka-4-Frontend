@@ -162,6 +162,7 @@ function DostupneAkcije() {
       const expectedOwnerType = getExpectedOwnerType(user);
       const list = extractArray(res).filter(
         stock => String(stock.owner_type ?? '').toUpperCase() === expectedOwnerType
+          && Number(stock.owner_id) !== Number(partyId)
       );
       setStocks(list);
     } catch (err) {
@@ -815,7 +816,7 @@ function AktivnePonude() {
               }}
             >
               <span style={{ fontSize: 10 }}>{showRejected ? '▼' : '▶'}</span>
-              Odbijene/Otkazane ponude ({rejectedOffers.length + rejectedPeerOffers.length})
+              Otkazane ponude ({rejectedOffers.length + rejectedPeerOffers.length})
             </button>
             {showRejected && (
               <div className={styles.tableWrap}>
@@ -1228,7 +1229,7 @@ function SklopljeniUgovori() {
               {filteredPeer.map(contract => {
                 const rn = contract.id?.routingNumber;
                 const cId = contract.id?.id;
-                const canExercise = contract.buyerId?.routingNumber === OUR_ROUTING_NUMBER;
+                const canExercise = contract.myContract;
                 return (
                   <tr key={`peer-${rn}-${cId}`} className={isExpired(contract.settlementDate) ? styles.expiredRow : ''}>
                     <td className={styles.ticker}>
@@ -1298,6 +1299,7 @@ function SklopljeniUgovori() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function OtcPortalPage() {
+  useEffect(() => { document.title = 'RAFBank | OTC Portal'; }, []);
   const pageRef = useRef(null);
   const user = useAuthStore(s => s.user);
   const { isSupervisor } = usePermissions();
@@ -1360,7 +1362,7 @@ export default function OtcPortalPage() {
 
   return (
     <div ref={pageRef} className={styles.stranica}>
-      {isClient ? <ClientHeader /> : <Navbar />}
+      {isClient ? <ClientHeader activeNav="otc" /> : <Navbar />}
 
       <main className={styles.sadrzaj}>
         <div className="page-anim">

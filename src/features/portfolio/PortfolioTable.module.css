@@ -1,4 +1,4 @@
-.tableWrap { background: white; border-radius: 8px; overflow: hidden; }
+.tableWrap { background: white; border-radius: 8px; overflow-x: auto; }
 .table { width: 100%; border-collapse: collapse; }
 .table th { text-align: left; padding: 16px; font-size: 11px; color: var(--tx-3); border-bottom: 1px solid var(--border); }
 .table td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
@@ -130,11 +130,12 @@
 }
 
 /* Da dugmići unutar ćelije ne beže levo-desno */
-.actionCell { 
-  display: flex; 
-  gap: 12px; 
-  align-items: center; 
-  justify-content: center; /* Dodaj ovo da se dugmići centriraju u odnosu na naslov */
+.actionCell {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .dividendBtn {

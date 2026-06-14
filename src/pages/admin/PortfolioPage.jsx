@@ -17,6 +17,7 @@ import DividendHistoryModal from '../../features/portfolio/DividendHistoryModal'
 
 
 export default function PortfolioPage() {
+  useEffect(() => { document.title = 'RAFBank | Portfolio'; }, []);
   const pageRef = useRef(null);
   const { can } = usePermissions();
   const user = useAuthStore(s => s.user);

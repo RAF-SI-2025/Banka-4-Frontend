@@ -38,6 +38,7 @@ function loadFundFromCache(fundId) {
 }
 
 export default function FundDetailPage() {
+  useEffect(() => { document.title = 'RAFBank | Detalji fonda'; }, []);
   const { fundId }  = useParams();
   const location    = useLocation();
   const pageRef     = useRef(null);

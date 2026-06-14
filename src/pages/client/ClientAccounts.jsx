@@ -299,6 +299,7 @@ function DetailRow({ label, value, highlight }) {
    MAIN PAGE
    ═══════════════════════════════════════════ */
 export default function ClientAccounts() {
+  useEffect(() => { document.title = 'RAFBank | Moji računi'; }, []);
   const pageRef = useRef(null);
   const navigate = useNavigate();
   const clientId = useAuthStore(s => s.user?.client_id ?? s.user?.id);
@@ -306,14 +307,11 @@ export default function ClientAccounts() {
   const { data: accountsData, loading: loadingAccounts } = useFetch(() => clientApi.getAccounts(clientId), [clientId]);
   const rawAccounts = Array.isArray(accountsData) ? accountsData : accountsData?.data ?? [];
 
-  const [localAccounts, setLocalAccounts] = useState([]);
-  useEffect(() => { setLocalAccounts(rawAccounts); }, [rawAccounts]);
-
   const [accountSortBy, setAccountSortBy] = useState('balance');
 
   // Filter active + sort by criteria
   const accounts = useMemo(() => {
-    return localAccounts.filter(a => !a.status || a.status === 'ACTIVE').sort((a, b) => {
+    return rawAccounts.filter(a => !a.status || a.status === 'ACTIVE').sort((a, b) => {
       if (accountSortBy === 'balance') return (b.balance ?? 0) - (a.balance ?? 0);
       if (accountSortBy === 'available') {
         const availA = (a.balance ?? 0) - (a.reserved_funds ?? 0);
@@ -325,7 +323,7 @@ export default function ClientAccounts() {
       }
       return 0;
     });
-  }, [localAccounts, accountSortBy]);
+  }, [rawAccounts, accountSortBy]);
 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [detailsAccount, setDetailsAccount] = useState(null);
@@ -364,11 +362,40 @@ export default function ClientAccounts() {
   }, [rawTx, sortBy]);
 
   useLayoutEffect(() => {
+    if (loadingAccounts) return;
+    if (!accounts.length) return;
+
+    const cards = pageRef.current?.querySelectorAll('.acc-card');
+    if (!cards?.length) return;
+
+    gsap.set(cards, { clearProps: 'all' });
+
     const ctx = gsap.context(() => {
-      gsap.from('.acc-card', { opacity: 0, y: 20, duration: 0.45, ease: 'power2.out', stagger: 0.07 });
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.45,
+          ease: 'power2.out',
+          stagger: 0.07,
+          clearProps: 'opacity,transform',
+        }
+      );
     }, pageRef);
-    return () => ctx.revert();
-  }, []);
+
+    return () => {
+      ctx.revert();
+      gsap.set(cards, { clearProps: 'all' });
+    };
+  }, [loadingAccounts, accounts.length]);
+
+  useEffect(() => {
+    if (selectedIdx >= accounts.length) {
+      setSelectedIdx(0);
+    }
+  }, [accounts.length, selectedIdx]);
 
   async function openDetails(acc) {
     setLoadingDetails(true);

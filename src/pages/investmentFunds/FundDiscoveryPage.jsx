@@ -77,6 +77,7 @@ function mergeFunds(base, incoming) {
 }
 
 export default function FundDiscoveryPage() {
+  useEffect(() => { document.title = 'RAFBank | Fondovi'; }, []);
   const navigate   = useNavigate();
   const location   = useLocation();
   const pageRef    = useRef(null);

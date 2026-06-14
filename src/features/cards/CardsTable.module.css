@@ -7,6 +7,16 @@
 
 .tableWrap { overflow-x: auto; }
 
+.modalError {
+  margin: -12px 0 20px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--red);
+  background: var(--red-bg);
+  border-radius: var(--radius);
+  line-height: 1.4;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

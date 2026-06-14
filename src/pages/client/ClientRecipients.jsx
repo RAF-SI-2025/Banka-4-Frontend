@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState } from 'react';
+import { useRef, useLayoutEffect, useState, useEffect } from 'react';
 import gsap from 'gsap';
 import { clientApi } from '../../api/endpoints/client';
 import Spinner from '../../components/ui/Spinner';
@@ -156,6 +156,7 @@ function DeleteModal({ open, recipientName, onClose, onConfirm }) {
 }
 
 export default function ClientRecipients() {
+  useEffect(() => { document.title = 'RAFBank | Primaoci plaćanja'; }, []);
   const pageRef = useRef(null);
 
   const [recipients, setRecipients] = useState([]);

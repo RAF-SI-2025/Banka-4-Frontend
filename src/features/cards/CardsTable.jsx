@@ -9,7 +9,7 @@ const ACTION_LABELS = {
   deactivate: { title: 'Deaktiviraj karticu',    desc: 'Da li ste sigurni da želite da deaktivirate ovu karticu? Ova akcija je nepovratna.', confirm: 'Deaktiviraj', color: 'var(--tx-3)' },
 };
 
-function ConfirmModal({ action, onConfirm, onCancel }) {
+function ConfirmModal({ action, error, onConfirm, onCancel }) {
   if (!action) return null;
   const { title, desc, confirm, color } = ACTION_LABELS[action];
   return (
@@ -17,6 +17,9 @@ function ConfirmModal({ action, onConfirm, onCancel }) {
       <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '28px 32px', maxWidth: 420, width: '90%', boxShadow: 'var(--shadow)' }} onClick={e => e.stopPropagation()}>
         <h3 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: 'var(--tx-1)' }}>{title}</h3>
         <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--tx-2)', lineHeight: 1.5 }}>{desc}</p>
+        {error && (
+          <p className={styles.modalError}>{error}</p>
+        )}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button onClick={onCancel} style={{ padding: '8px 18px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--tx-2)', fontFamily: 'var(--font)' }}>
             Otkaži
@@ -33,6 +36,7 @@ function ConfirmModal({ action, onConfirm, onCancel }) {
 function ClientRow({ client, onActionSuccess }) {
   const clientName = `${client.first_name} ${client.last_name}`;
   const [pending, setPending] = useState(null); // { action: 'block'|'unblock'|'deactivate', fn, cardId }
+  const [actionError, setActionError] = useState(null);
 
   // Flatten cards from all accounts
   const cards = (client.accounts || []).flatMap(acc => {
@@ -44,18 +48,24 @@ function ClientRow({ client, onActionSuccess }) {
   });
 
   const handleAction = (actionFn, cardId, actionKey) => {
+    setActionError(null);
     setPending({ action: actionKey, fn: actionFn, cardId });
+  };
+
+  const handleCancel = () => {
+    setActionError(null);
+    setPending(null);
   };
 
   const handleConfirm = async () => {
     if (!pending) return;
+    setActionError(null);
     try {
       await pending.fn(pending.cardId);
       if (onActionSuccess) onActionSuccess();
-    } catch (err) {
-      alert(err.response?.data?.error ?? 'Akcija nije uspela.');
-    } finally {
       setPending(null);
+    } catch (err) {
+      setActionError(err.response?.data?.error ?? 'Akcija nije uspela.');
     }
   };
 
@@ -140,8 +150,9 @@ function ClientRow({ client, onActionSuccess }) {
       {rows}
       <ConfirmModal
         action={pending?.action ?? null}
+        error={actionError}
         onConfirm={handleConfirm}
-        onCancel={() => setPending(null)}
+        onCancel={handleCancel}
       />
     </>
   );

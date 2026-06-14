@@ -1,15 +1,16 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import gsap                                   from 'gsap';
 import { useFetch }                           from '../../hooks/useFetch';
 import { clientsApi }                         from '../../api/endpoints/clients';
 import Navbar                                 from '../../components/layout/Navbar';
 import Spinner                                from '../../components/ui/Spinner';
 import Alert                                  from '../../components/ui/Alert';
-import ClientsTable                           from '../../features/clients/ClientsTable';
+import ClientTable                            from '../../features/clients/ClientTable';
 import ClientEditForm                         from '../../features/clients/ClientEditForm';
 import styles                                 from './ClientsPortal.module.css';
 
 export default function ClientsPortal() {
+  useEffect(() => { document.title = 'RAFBank | Portal klijenata'; }, []);
   const pageRef = useRef(null);
 
   const { data, loading, error, refetch } = useFetch(() => clientsApi.getAll());
@@ -104,7 +105,8 @@ export default function ClientsPortal() {
               />
             </div>
             <div className="page-anim">
-              <ClientsTable
+              <ClientTable
+                variant="select"
                 clients={clients}
                 selectedId={selected?.id}
                 onSelect={handleSelect}

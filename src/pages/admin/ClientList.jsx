@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import gsap                                  from 'gsap';
 import { useFetch }                          from '../../hooks/useFetch';
 import { useDebounce }                       from '../../hooks/useDebounce';
@@ -11,6 +11,7 @@ import ClientFilters                         from '../../features/clients/Client
 import styles                                from './ClientList.module.css';
 
 export default function ClientList() {
+  useEffect(() => { document.title = 'RAFBank | Klijenti'; }, []);
   const pageRef = useRef(null);
 
   const [filters, setFilters] = useState({

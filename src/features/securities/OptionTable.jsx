@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import styles from './OptionTable.module.css';
 import React from "react";
+import Toast from '../../components/ui/Toast';
 
 function fmt(n, d = 2) {
   if (n == null) return '—';
@@ -20,7 +21,8 @@ function daysUntil(dateStr) {
 
 export default function OptionTable({ options, currentPrice, canExercise }) {
   const [selectedExpiry, setSelectedExpiry] = useState(options[0]?.settlementDate ?? null);
-  const [strikeCount, setStrikeCount] = useState(4); 
+  const [strikeCount, setStrikeCount] = useState(4);
+  const [toastMsg, setToastMsg] = useState(null);
 
   const expiryGroup = useMemo(
     () => options.find(g => g.settlementDate === selectedExpiry),
@@ -167,7 +169,7 @@ export default function OptionTable({ options, currentPrice, canExercise }) {
                         {canEx && (
                           <button
                             className={styles.exerciseBtn}
-                            onClick={() => alert(`TODO: Exercise opcije za strike $${row.strike}`)}
+                            onClick={() => setToastMsg(`Exercise opcije za strike $${row.strike} — funkcionalnost uskoro dostupna.`)}
                           >
                             Exercise
                           </button>
@@ -186,6 +188,8 @@ export default function OptionTable({ options, currentPrice, canExercise }) {
         <span className={styles.legendItm}>■ In-The-Money (ITM)</span>
         <span className={styles.legendOtm}>■ Out-of-Money (OTM)</span>
       </div>
+
+      <Toast open={!!toastMsg} message={toastMsg} onClose={() => setToastMsg(null)} />
     </div>
   );
 }

@@ -1,8 +1,24 @@
-import { extractFunds, extractAccounts } from '../../support/helpers';
+import { extractFunds, extractAccounts, getDirectApiUrl } from '../../support/helpers';
 
 describe('Scenario 36: Klijent povlači novac iz fonda - nedovoljna likvidnost', () => {
+  let clientToken: string | null = null;
+  let rollbackFundId: string | null = null;
+  let rollbackAmount: number | null = null;
+  let rollbackAccountNumber: string | null = null;
+  let shouldRollback = false;
+
   beforeEach(() => {
+    clientToken = null;
+    rollbackFundId = null;
+    rollbackAmount = null;
+    rollbackAccountNumber = null;
+    shouldRollback = false;
+
     cy.loginAsClientAna();
+
+    cy.window().then((win) => {
+      clientToken = win.localStorage.getItem('token');
+    });
 
     cy.intercept('GET', '**/api/client/*/assets*').as('getPortfolio');
     cy.intercept('GET', '**/api/client/*/funds*').as('getClientFunds');
@@ -10,6 +26,27 @@ describe('Scenario 36: Klijent povlači novac iz fonda - nedovoljna likvidnost',
     cy.intercept('POST', '**/api/investment-funds/*/withdraw').as('withdrawFromFund');
 
     cy.visit('/client/portfolio');
+  });
+
+  afterEach(() => {
+    if (!shouldRollback || !clientToken || !rollbackFundId || !rollbackAmount || !rollbackAccountNumber) {
+      return;
+    }
+
+    cy.request({
+      method: 'POST',
+      url: `${getDirectApiUrl(8082)}/investment-funds/${rollbackFundId}/invest`,
+      headers: {
+        Authorization: `Bearer ${clientToken}`,
+      },
+      body: {
+        account_number: rollbackAccountNumber,
+        amount: rollbackAmount,
+      },
+      failOnStatusCode: false,
+    }).then((res) => {
+      expect([200, 201, 202], `Rollback invest nije uspeo. Response: ${JSON.stringify(res.body)}`).to.include(res.status);
+    });
   });
 
   it('šalje withdrawal zahtev za Anin fond', () => {
@@ -34,6 +71,10 @@ describe('Scenario 36: Klijent povlači novac iz fonda - nedovoljna likvidnost',
 
     cy.get('@targetFund').then((fund: any) => {
       const fundName = fund.fund_name ?? fund.name;
+      const fundId = String(fund.fund_id ?? fund.id);
+
+      rollbackFundId = fundId;
+      rollbackAmount = 2000;
 
       cy.contains(fundName).should('be.visible');
       cy.contains(fundName)
@@ -66,6 +107,8 @@ describe('Scenario 36: Klijent povlači novac iz fonda - nedovoljna likvidnost',
       const accountNumber =
         acc.account_number ?? acc.accountNumber ?? acc.AccountNumber ?? acc.number;
 
+      rollbackAccountNumber = String(accountNumber);
+
       cy.get('select').select(String(accountNumber));
     });
 
@@ -75,6 +118,10 @@ describe('Scenario 36: Klijent povlači novac iz fonda - nedovoljna likvidnost',
       expect([200, 201, 202, 400, 409, 422]).to.include(response?.statusCode);
       expect(Number(request.body.amount)).to.eq(2000);
       expect(request.body.account_number).to.exist;
+
+      if ([200, 201, 202].includes(response?.statusCode ?? 0)) {
+        shouldRollback = true;
+      }
     });
   });
 });

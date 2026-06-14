@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useNavigate }                        from 'react-router-dom';
 import gsap                                   from 'gsap';
 import { employeesApi }                       from '../../api/endpoints/employees';
@@ -61,6 +61,7 @@ function validateBirthDate(value) {
 }
 
 export default function NewEmployee() {
+  useEffect(() => { document.title = 'RAFBank | Novi zaposleni'; }, []);
   const navigate = useNavigate();
   const pageRef  = useRef(null);
 

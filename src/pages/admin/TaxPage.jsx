@@ -36,6 +36,7 @@ function normalizeUser(u) {
 }
 
 export default function TaxPage() {
+  useEffect(() => { document.title = 'RAFBank | Porezi'; }, []);
   const pageRef = useRef(null);
 
   const [users,   setUsers]   = useState([]);

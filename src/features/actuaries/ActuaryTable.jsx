@@ -20,7 +20,7 @@ export default function ActuaryTable({ actuaries, onChangeLimit, onResetUsedLimi
             <th>Pozicija</th>
             <th>Limit</th>
             <th>Iskorišćen limit</th>
-            <th>Need Approval</th>
+            <th>Zahteva odobrenje</th>
             <th>Akcije</th>
           </tr>
         </thead>

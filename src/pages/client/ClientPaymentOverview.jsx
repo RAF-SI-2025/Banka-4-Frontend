@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import gsap from 'gsap';
 import { useFetch } from '../../hooks/useFetch';
 import { paymentsApi } from '../../api/endpoints/payments';
@@ -87,6 +87,7 @@ function InfoRow({ label, value, highlight }) {
    MAIN PAGE
    ═══════════════════════════════════════════ */
 export default function ClientPaymentOverview() {
+  useEffect(() => { document.title = 'RAFBank | Plaćanja'; }, []);
   const pageRef = useRef(null);
   const clientId = useAuthStore(s => s.user?.client_id ?? s.user?.id);
 

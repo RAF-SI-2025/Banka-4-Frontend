@@ -153,3 +153,23 @@ export function pickArray(body: any) {
   if (Array.isArray(body?.content)) return body.content;
   return [];
 }
+
+export function getDirectApiUrl(targetPort: 8080 | 8081 | 8082): string {
+  const apiUrl = Cypress.env('API_URL') as string | undefined;
+  if (!apiUrl) throw new Error('Missing Cypress env API_URL');
+
+  return apiUrl
+    .replace(':8080/api', `:${targetPort}/api`)
+    .replace(':8081/api', `:${targetPort}/api`)
+    .replace(':8082/api', `:${targetPort}/api`);
+}
+
+export function extractOrderId(body: any): string | null {
+  return (
+    body?.order_id ??
+    body?.id ??
+    body?.data?.order_id ??
+    body?.data?.id ??
+    null
+  );
+}

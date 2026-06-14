@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState, useMemo } from 'react';
+import { useRef, useLayoutEffect, useState, useMemo, useEffect } from 'react';
 import gsap from 'gsap';
 import { exchangeApi } from '../../api/endpoints/exchange';
 import { useFetch } from '../../hooks/useFetch';
@@ -12,6 +12,7 @@ const FLAG_EMOJI = {
 };
 
 export default function ClientExchange() {
+  useEffect(() => { document.title = 'RAFBank | Menjačnica'; }, []);
   const pageRef = useRef(null);
   const { data: ratesData, loading } = useFetch(() => exchangeApi.getRates(), []);
   const rates = Array.isArray(ratesData?.rates) ? ratesData.rates

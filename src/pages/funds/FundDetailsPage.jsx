@@ -19,6 +19,7 @@ import { computeMetrics, fmtPct, fmtRatio, MIN_SNAPSHOTS } from '../../utils/fun
 import { securitiesApi } from '../../api/endpoints/securities';
 
 export default function FundDetailsPage() {
+  useEffect(() => { document.title = 'RAFBank | Detalji fonda'; }, []);
   const { id } = useParams();
   const pageRef = useRef(null);
 

@@ -12,6 +12,7 @@ import AccountDetailsModal           from '../../features/accounts/AccountDetail
 import styles                        from './Accounts.module.css';
 
 export default function Accounts() {
+  useEffect(() => { document.title = 'RAFBank | Računi'; }, []);
   const pageRef = useRef(null);
 
   const accounts            = useAccountStore(s => s.accounts);

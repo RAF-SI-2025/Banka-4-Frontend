@@ -16,6 +16,7 @@ import styles from './ClientPortfolioPage.module.css';
 import DividendHistoryModal from '../../features/portfolio/DividendHistoryModal';
 
 export default function ClientPortfolioPage() {
+  useEffect(() => { document.title = 'RAFBank | Moj Portfolio'; }, []);
   const pageRef = useRef(null);
 
   const [portfolio, setPortfolio] = useState({ stocks: [], tax: { taxPaid: 0, taxUnpaid: 0 } });

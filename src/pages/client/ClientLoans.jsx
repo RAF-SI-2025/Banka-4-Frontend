@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState } from 'react';
+import { useRef, useLayoutEffect, useState, useEffect, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
 import { clientApi } from '../../api/endpoints/client';
 import { loansApi } from '../../api/endpoints/loans';
@@ -26,6 +26,7 @@ function formatAmount(n) {
 const LOAN_TYPE_IDS = { CASH: 1, AUTO: 2, MORTGAGE: 3 };
 
 export default function ClientLoans() {
+  useEffect(() => { document.title = 'RAFBank | Krediti'; }, []);
   const pageRef = useRef(null);
   const clientId = useAuthStore(s => s.user?.client_id ?? s.user?.id);
 
@@ -45,27 +46,39 @@ export default function ClientLoans() {
   const [employmentStatus, setEmploymentStatus]   = useState('stalno');
 
   const { data: loansData, loading, error } = useFetch(() => loansApi.getMyLoans(clientId), [clientId]);
-  const loans = Array.isArray(loansData) ? loansData : loansData?.data ?? [];
+  const loans = useMemo(() => {
+    return Array.isArray(loansData) ? loansData : loansData?.data ?? [];
+  }, [loansData]);
 
   const { data: accountsData } = useFetch(() => clientApi.getAccounts(clientId), [clientId]);
   const accounts = Array.isArray(accountsData) ? accountsData : accountsData?.data ?? [];
 
-  // Fetch full loan details (with installments) when selecting
-  async function selectLoanWithDetails(loan) {
+  const didInitSelectedLoan = useRef(false);
+
+  useEffect(() => {
+    didInitSelectedLoan.current = false;
+    setSelectedLoan(null);
+  }, [clientId]);
+
+  const selectLoanWithDetails = useCallback(async (loan) => {
+    if (!clientId) return;
     try {
       const details = await loansApi.getLoanById(clientId, loan.id);
       setSelectedLoan(details ?? loan);
     } catch {
       setSelectedLoan(loan);
     }
-  }
+  }, [clientId]);
 
   // Auto-select first loan
   useLayoutEffect(() => {
-    if (loans.length > 0 && !selectedLoan) {
-      selectLoanWithDetails(loans[0]);
-    }
-  }, [loans]);
+    if (didInitSelectedLoan.current) return;
+    if (loading) return;
+    if (loans.length === 0) return;
+
+    didInitSelectedLoan.current = true;
+    void selectLoanWithDetails(loans[0]);
+  }, [loading, loans, selectLoanWithDetails]);
 
   useLayoutEffect(() => {
     if (loading) return;
@@ -134,7 +147,7 @@ export default function ClientLoans() {
 
   return (
     <div>
-      <ClientHeader />
+        <ClientHeader activeNav="loans" />
       <div ref={pageRef} className={styles.page}>
         <div className={styles.topBar}>
           <h1 className={styles.title}>Krediti</h1>
@@ -153,7 +166,9 @@ export default function ClientLoans() {
             <div className="sub-card">
               {selectedLoan
                 ? <LoanDetails loan={selectedLoan} />
-                : <p style={{ color: 'var(--tx-3)', padding: '2rem' }}>Izaberite kredit.</p>
+                : loans.length > 0
+                  ? <p style={{ color: 'var(--tx-3)', padding: '2rem' }}>Izaberite kredit.</p>
+                  : null
               }
             </div>
           </div>

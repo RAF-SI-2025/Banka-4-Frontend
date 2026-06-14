@@ -1,10 +1,7 @@
-import { pickArray } from '../../support/helpers';
+import { pickArray, getDirectApiUrl, extractOrderId } from '../../support/helpers';
 
 function loginAsSupervisor() {
-  const apiUrl = Cypress.env('API_URL');
-  if (!apiUrl) throw new Error('Missing Cypress env API_URL');
-
-  cy.request('POST', `${apiUrl}/auth/login`, {
+  cy.request('POST', `${getDirectApiUrl(8080)}/auth/login`, {
     email: 'admin@raf.rs',
     password: 'admin123',
   }).then((res) => {
@@ -52,13 +49,39 @@ function selectFirstRealAccountOption() {
 }
 
 describe('Scenario 41: Supervizor kupuje hartiju za banku', () => {
+  let supervisorToken: string | null = null;
+  let createdOrderId: string | null = null;
+
   beforeEach(() => {
+    supervisorToken = null;
+    createdOrderId = null;
+
     loginAsSupervisor();
+
+    cy.window().then((win) => {
+      supervisorToken = win.localStorage.getItem('token');
+    });
 
     cy.intercept('GET', '**/api/listings/stocks*').as('getStocks');
     cy.intercept('GET', '**/api/accounts*').as('getAccounts');
     cy.intercept('POST', '**/api/orders').as('createBankOrder');
     cy.intercept('POST', '**/api/orders/invest').as('createFundOrder');
+  });
+
+  afterEach(() => {
+    if (!supervisorToken || !createdOrderId) return;
+
+    cy.request({
+      method: 'PATCH',
+      url: `${getDirectApiUrl(8082)}/orders/${createdOrderId}/cancel`,
+      headers: {
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: {},
+      failOnStatusCode: false,
+    }).then((res) => {
+      expect([200, 204], `Rollback cancel ordera nije uspeo. Response: ${JSON.stringify(res.body)}`).to.include(res.status);
+    });
   });
 
   it('šalje BUY order sa bankinog računa preko običnog /orders endpointa', () => {
@@ -109,6 +132,8 @@ describe('Scenario 41: Supervizor kupuje hartiju za banku', () => {
       expect(request.body.account_number).to.exist;
       expect(request.body.listing_id).to.exist;
       expect(request.body.fund_id).to.not.exist;
+
+      createdOrderId = extractOrderId(response?.body);
     });
 
     cy.get('@createFundOrder.all').should('have.length', 0);

@@ -11,6 +11,7 @@ import styles from './Loans.module.css';
 import Navbar from "../../components/layout/Navbar.jsx";
 
 export default function Loans() {
+  useEffect(() => { document.title = 'RAFBank | Krediti'; }, []);
   const pageRef = useRef(null);
   const [tab, setTab] = useState('active'); // 'active' | 'requests'
 
@@ -157,9 +158,9 @@ export default function Loans() {
               <main className={styles.detailSide}>
                 {selectedLoan ? (
                   <LoanDetails loan={selectedLoan} />
-                ) : (
+                ) : loans.length > 0 ? (
                   <div className={styles.emptyState}><p>Izaberite kredit sa leve strane.</p></div>
-                )}
+                ) : null}
               </main>
             </div>
           )

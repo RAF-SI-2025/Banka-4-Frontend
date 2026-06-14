@@ -94,16 +94,17 @@ const MOCK_ORDERS = [
 ];
 
 const FILTERS = [
-  { key: 'ALL', label: 'All' },
-  { key: ORDER_STATUS.PENDING, label: 'Pending' },
-  { key: ORDER_STATUS.APPROVED, label: 'Approved' },
-  { key: ORDER_STATUS.DECLINED, label: 'Declined' },
-  { key: ORDER_STATUS.DONE, label: 'Done' },
-  { key: ORDER_STATUS.CANCELLED, label: 'Cancelled' },
-  { key: ORDER_STATUS.PARTIALLY_FILLED, label: 'Partially Filled' },
+  { key: 'ALL', label: 'Sve' },
+  { key: ORDER_STATUS.PENDING, label: 'Na čekanju' },
+  { key: ORDER_STATUS.APPROVED, label: 'Odobreno' },
+  { key: ORDER_STATUS.DECLINED, label: 'Odbijeno' },
+  { key: ORDER_STATUS.DONE, label: 'Završeno' },
+  { key: ORDER_STATUS.CANCELLED, label: 'Otkazano' },
+  { key: ORDER_STATUS.PARTIALLY_FILLED, label: 'Delimično ispunjeno' },
 ];
 
 export default function SupervisorOrdersPage() {
+  useEffect(() => { document.title = 'RAFBank | Supervizorski orderi'; }, []);
   const pageRef = useRef(null);
   const user = useAuthStore((s) => s.user);
 
@@ -311,13 +312,13 @@ export default function SupervisorOrdersPage() {
                 <thead>
                   <tr>
                     <th>Agent</th>
-                    <th>Order type</th>
-                    <th>Asset</th>
-                    <th>Quantity</th>
-                    <th>Contract size</th>
-                    <th>Price per unit</th>
-                    <th>Direction</th>
-                    <th>Remaining portions</th>
+                    <th>Tip naloga</th>
+                    <th>Hartija</th>
+                    <th>Količina</th>
+                    <th>Veličina ugovora</th>
+                    <th>Cena po jedinici</th>
+                    <th>Smer</th>
+                    <th>Preostale porcije</th>
                     <th>Status</th>
                     <th>Akcije</th>
                   </tr>
@@ -411,10 +412,10 @@ export default function SupervisorOrdersPage() {
 
 function OrderStatusTag({ status }) {
   const config = {
-    [ORDER_STATUS.PENDING]: { label: 'Pending', className: styles.statusPending },
-    [ORDER_STATUS.APPROVED]: { label: 'Approved', className: styles.statusApproved },
-    [ORDER_STATUS.DECLINED]: { label: 'Declined', className: styles.statusDeclined },
-    [ORDER_STATUS.DONE]: { label: 'Done', className: styles.statusDone },
+    [ORDER_STATUS.PENDING]: { label: 'Na čekanju', className: styles.statusPending },
+    [ORDER_STATUS.APPROVED]: { label: 'Odobreno', className: styles.statusApproved },
+    [ORDER_STATUS.DECLINED]: { label: 'Odbijeno', className: styles.statusDeclined },
+    [ORDER_STATUS.DONE]: { label: 'Završeno', className: styles.statusDone },
   };
 
   const meta = config[status] || { label: status || 'Unknown', className: styles.statusNeutral };

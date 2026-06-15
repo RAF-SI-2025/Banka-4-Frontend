@@ -56,18 +56,6 @@ export default function PortfolioPage() {
         setLoading(true);
         let res;
         
-        // DEBUG: Log what endpoint we're using
-        console.log('[AdminPortfolioPage] Loading portfolio:', {
-          employeeId,
-          isAgent,
-          willUse: isAgent ? 'getActuaryPortfolio' : 'getClientPortfolio',
-          userRole: user?.role,
-          userEmail: user?.email,
-          canManageOTC,
-          canExercise,
-          canViewOptions
-        });
-        
         // Dinamički biramo endpoint: Actuary/Agent ili običan Client
         if (isAgent) {
           res = await portfolioApi.getActuaryPortfolio(employeeId);

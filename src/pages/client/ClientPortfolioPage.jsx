@@ -43,15 +43,6 @@ export default function ClientPortfolioPage() {
         setError(null);
         const clientId = user.client_id ?? user.clientId ?? user.identity_id ?? user.identityId ?? user.id;
         
-        // DEBUG: Log what we're requesting
-        console.log('[ClientPortfolioPage] Loading portfolio for:', {
-          userId: user.id,
-          clientId: user.client_id,
-          resolvedClientId: clientId,
-          userRole: user.role,
-          userEmail: user.email
-        });
-        
         const res = await portfolioApi.getClientPortfolio(clientId);
         const rawData = res?.data || res;
         const allAssets = Array.isArray(rawData) ? rawData : (rawData?.assets ?? []);

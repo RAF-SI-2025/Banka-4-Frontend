@@ -6,25 +6,18 @@ export const useAuthStore = create(set => ({
   refreshToken: null,
 
   setAuth: (user, token, refreshToken) => {
-    localStorage.setItem('token', token);
-    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-    else localStorage.removeItem('refreshToken');
     localStorage.setItem('user', JSON.stringify(user));
     set({ user, token, refreshToken: refreshToken ?? null });
   },
 
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     set({ user: null, token: null, refreshToken: null });
   },
 
   initFromStorage: () => {
-    const token        = localStorage.getItem('token');
-    const refreshToken = localStorage.getItem('refreshToken');
-    const raw          = localStorage.getItem('user');
-    const user         = raw && raw !== 'undefined' ? JSON.parse(raw) : null;
-    if (token) set({ token, refreshToken, user });
+    const raw  = localStorage.getItem('user');
+    const user = raw && raw !== 'undefined' ? JSON.parse(raw) : null;
+    if (user) set({ user });
   },
 }));

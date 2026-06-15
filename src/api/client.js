@@ -34,7 +34,7 @@ export const interbankApi = axios.create({
 });
 
 function attachToken(config) {
-  const token = localStorage.getItem('token');
+  const token = useAuthStore.getState().token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 }
@@ -49,7 +49,7 @@ let refreshPromise = null;
 export function doRefresh() {
   if (refreshPromise) return refreshPromise;
 
-  const refreshToken = localStorage.getItem('refreshToken');
+  const refreshToken = useAuthStore.getState().refreshToken;
   if (!refreshToken || refreshToken === 'undefined') {
     useAuthStore.getState().logout();
     window.location.href = '/login';
@@ -104,4 +104,3 @@ tradingApi.interceptors.response.use(res => res.data, attachRetry(tradingApi));
 interbankApi.interceptors.response.use(res => res.data, attachRetry(interbankApi));
 
 export default api;
-

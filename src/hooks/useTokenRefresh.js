@@ -11,9 +11,9 @@ function parseJwtExp(token) {
 }
 
 /**
- * Proaktivno osvežava access token 60s pre isteka.
- * Poziva se u App.jsx jednom za celu aplikaciju.
- */
+ 
+Proaktivno osvežava access token 60s pre isteka.
+Poziva se u App.jsx jednom za celu aplikaciju.*/
 export function useTokenRefresh() {
   const token = useAuthStore(s => s.token);
 
@@ -26,7 +26,7 @@ export function useTokenRefresh() {
     const delay = exp - Date.now() - 60_000;
 
     async function tryRefresh() {
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = useAuthStore.getState().refreshToken;
       if (!refreshToken || refreshToken === 'undefined') return;
       try {
         await doRefresh();

@@ -5,7 +5,7 @@
 }
 
 .sadrzaj {
-  max-width: 1100px; /* Uže je preglednije za klijenta */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 40px 24px;
 }
@@ -49,7 +49,7 @@
   border-radius: 16px; /* Zaobljenije ivice za moderniji klijentski vju */
   border: 1px solid #e2e8f0;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
+  overflow: visible;
   margin-top: 24px;
 }
 

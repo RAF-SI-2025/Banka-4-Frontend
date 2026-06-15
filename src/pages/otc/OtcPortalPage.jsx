@@ -14,7 +14,7 @@ import { useSearchParams } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 import Toast from '../../components/ui/Toast';
 import { diffOffers, summarizeEvents } from './utils/otcNotifications';
-import { peerOtcApi, getBankName, isSelfPeer } from '../../api/endpoints/peerOtc';
+import { peerOtcApi, getBankName, isSelfPeer, OUR_ROUTING_NUMBER, extractPeerName } from '../../api/endpoints/peerOtc';
 
 const TAB = {
   DOSTUPNE: 'DOSTUPNE',
@@ -162,6 +162,7 @@ function DostupneAkcije() {
       const expectedOwnerType = getExpectedOwnerType(user);
       const list = extractArray(res).filter(
         stock => String(stock.owner_type ?? '').toUpperCase() === expectedOwnerType
+          && Number(stock.owner_id) !== Number(partyId)
       );
       setStocks(list);
     } catch (err) {
@@ -414,6 +415,9 @@ function AktivnePonude() {
   const [notifCount, setNotifCount] = useState(0);
   const [toastMsg, setToastMsg] = useState('');
   const [toastOpen, setToastOpen] = useState(false);
+  const [showRejected, setShowRejected] = useState(false);
+  const [showAccepted, setShowAccepted] = useState(false);
+  const [peerNames, setPeerNames] = useState({});
 
   const prevOffersRef = useRef([]);
   const _pollingRef = useRef(null);
@@ -463,7 +467,9 @@ function AktivnePonude() {
 
       prevOffersRef.current = list;
       setOffers(list);
-      setPeerOffers(extractArray(peerRes).map(n => ({ ...n, _isPeer: true })));
+      const peerList = extractArray(peerRes).map(n => ({ ...n, _isPeer: true }));
+      setPeerOffers(peerList);
+      fetchPeerNames(peerList);
     } catch {
       if (!silent) setError('Greška pri učitavanju aktivnih ponuda.');
     } finally {
@@ -571,6 +577,57 @@ function AktivnePonude() {
     return `ID: ${offer.buyer_id} / ${offer.seller_id}`;
   }
 
+  function getPeerCounterpartyLabel(offer) {
+    const amBuyer = isSelfPeer(offer.buyerId, user);
+    const counterpartyId = amBuyer ? offer.sellerId : offer.buyerId;
+    const nameKey = `${counterpartyId?.routingNumber}/${counterpartyId?.id}`;
+    const resolvedName = peerNames[nameKey];
+    const role = amBuyer ? 'Prodavac' : 'Kupac';
+    const bankLabel = getBankName(counterpartyId?.routingNumber);
+    return resolvedName
+      ? `${role} — ${resolvedName} (${bankLabel})`
+      : `${role} (${bankLabel})`;
+  }
+
+  async function fetchPeerNames(negotiations) {
+    const toFetch = new Map();
+    for (const neg of negotiations) {
+      const offer = neg.offer ?? {};
+      const amBuyer = isSelfPeer(offer.buyerId, user);
+      const counterpartyId = amBuyer ? offer.sellerId : offer.buyerId;
+      if (counterpartyId?.routingNumber && counterpartyId?.id) {
+        toFetch.set(`${counterpartyId.routingNumber}/${counterpartyId.id}`, counterpartyId);
+      }
+    }
+    const results = {};
+    await Promise.allSettled(
+      [...toFetch.entries()].map(async ([key, id]) => {
+        try {
+          const res = await peerOtcApi.getPeerUser(id.routingNumber, id.id);
+          const name = extractPeerName(res);
+          if (name) results[key] = name;
+        } catch {
+          // silently fall back to bank name
+        }
+      })
+    );
+    if (Object.keys(results).length > 0) {
+      setPeerNames(prev => ({ ...prev, ...results }));
+    }
+  }
+
+  const activeOffers       = offers.filter(o => !['REJECTED', 'ACCEPTED'].includes(o.status));
+  const rejectedOffers     = offers.filter(o => o.status === 'REJECTED');
+  const acceptedOffers     = offers.filter(o => o.status === 'ACCEPTED');
+  const activePeerOffers   = peerOffers.filter(n => n.status === 'ongoing');
+  const rejectedPeerOffers = peerOffers.filter(n => n.status === 'cancelled' || n.status === 'expired');
+  const acceptedPeerOffers = peerOffers.filter(n => n.status === 'accepted');
+
+  const isOngoingOffer = selected ? !['REJECTED', 'ACCEPTED'].includes(selected.status) : false;
+  const isMyTurnOffer  = selected?.modified_by != null
+    ? Number(selected.modified_by) !== Number(partyId)
+    : true;
+
   return (
     <section className={styles.card}>
       <div className={styles.sectionHeader}>
@@ -605,77 +662,217 @@ function AktivnePonude() {
       ) : offers.length === 0 && peerOffers.length === 0 ? (
         <div className={styles.emptyTable}>Nema aktivnih pregovora.</div>
       ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>STOCK</th>
-                <th>AMOUNT</th>
-                <th>PRICE</th>
-                <th>SETTLEMENT</th>
-                <th>PREMIUM</th>
-                <th>PREGOVARA SA</th>
-                <th style={{ textAlign: 'right' }}>AKCIJE</th>
-              </tr>
-            </thead>
-            <tbody>
-              {offers.map(offer => (
-                <tr
-                  key={offer.otc_offer_id}
-                  className={getDeviationClass(offer)}
-                  onClick={() => openModal(offer)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td>#{offer.otc_offer_id}</td>
-                  <td className={styles.ticker}>{offer.ticker ?? offer.stock_name ?? '—'}</td>
-                  <td>{offer.amount ?? '—'}</td>
-                  <td>{offer.price_per_stock_rsd != null ? `${Number(offer.price_per_stock_rsd).toFixed(2)} RSD` : '—'}</td>
-                  <td>{formatDate(offer.settlement_date)}</td>
-                  <td>{offer.premium_rsd != null ? `${Number(offer.premium_rsd).toFixed(2)} RSD` : '—'}</td>
-                  <td>{getCounterparty(offer)}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); openModal(offer); }}>
-                      Detalji
-                    </button>
-                  </td>
+        <>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>STOCK</th>
+                  <th>AMOUNT</th>
+                  <th>PRICE</th>
+                  <th>SETTLEMENT</th>
+                  <th>PREMIUM</th>
+                  <th>PREGOVARA SA</th>
+                  <th style={{ textAlign: 'right' }}>AKCIJE</th>
                 </tr>
-              ))}
-              {peerOffers.map(neg => {
-                const rn = neg.id?.routingNumber;
-                const negId = neg.id?.id;
-                const offer = neg.offer ?? {};
-                const amBuyer = isSelfPeer(offer.buyerId, user);
-                const counterparty = amBuyer
-                  ? `Prodavac (${getBankName(offer.sellerId?.routingNumber)})`
-                  : `Kupac (${getBankName(offer.buyerId?.routingNumber)})`;
-                return (
+              </thead>
+              <tbody>
+                {activeOffers.length === 0 && activePeerOffers.length === 0 && (
+                  <tr><td colSpan={7} className={styles.emptyTable}>Nema aktivnih pregovora.</td></tr>
+                )}
+                {activeOffers.map(offer => (
                   <tr
-                    key={`peer-${rn}-${negId}`}
-                    onClick={() => setPeerSelected(neg)}
+                    key={offer.otc_offer_id}
+                    className={getDeviationClass(offer)}
+                    onClick={() => openModal(offer)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <td>
-                      <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', marginRight: 6 }}>PEER</span>
-                      {rn}/{negId?.slice(0, 8)}…
-                    </td>
-                    <td className={styles.ticker}>{offer.stock?.ticker ?? '—'}</td>
+                    <td className={styles.ticker}>{offer.ticker ?? offer.stock_name ?? '—'}</td>
                     <td>{offer.amount ?? '—'}</td>
-                    <td>{offer.pricePerUnit ? `${Number(offer.pricePerUnit.amount).toFixed(2)} ${offer.pricePerUnit.currency}` : '—'}</td>
-                    <td>{formatDate(offer.settlementDate)}</td>
-                    <td>{offer.premium ? `${Number(offer.premium.amount).toFixed(2)} ${offer.premium.currency}` : '—'}</td>
-                    <td>{counterparty}</td>
+                    <td>{offer.price_per_stock_rsd != null ? `${Number(offer.price_per_stock_rsd).toFixed(2)} RSD` : '—'}</td>
+                    <td>{formatDate(offer.settlement_date)}</td>
+                    <td>{offer.premium_rsd != null ? `${Number(offer.premium_rsd).toFixed(2)} RSD` : '—'}</td>
+                    <td>{getCounterparty(offer)}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); setPeerSelected(neg); }}>
+                      <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); openModal(offer); }}>
                         Detalji
                       </button>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ))}
+                {activePeerOffers.map(neg => {
+                  const rn = neg.id?.routingNumber;
+                  const negId = neg.id?.id;
+                  const offer = neg.offer ?? {};
+                  return (
+                    <tr
+                      key={`peer-${rn}-${negId}`}
+                      onClick={() => setPeerSelected(neg)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td className={styles.ticker}>{offer.stock?.ticker ?? '—'}</td>
+                      <td>{offer.amount ?? '—'}</td>
+                      <td>{offer.pricePerUnit ? `${Number(offer.pricePerUnit.amount).toFixed(2)} ${offer.pricePerUnit.currency}` : '—'}</td>
+                      <td>{formatDate(offer.settlementDate)}</td>
+                      <td>{offer.premium ? `${Number(offer.premium.amount).toFixed(2)} ${offer.premium.currency}` : '—'}</td>
+                      <td>
+                        <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', marginRight: 6, verticalAlign: 'middle' }}>PEER</span>
+                        {getPeerCounterpartyLabel(offer)}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); setPeerSelected(neg); }}>
+                          Detalji
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Prihvaćene ponude */}
+          <div>
+            <button
+              onClick={() => setShowAccepted(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                width: '100%', padding: '12px 28px',
+                background: 'none', border: 'none',
+                borderTop: '1px solid var(--border)',
+                cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                color: 'var(--tx-2)', textAlign: 'left',
+              }}
+            >
+              <span style={{ fontSize: 10 }}>{showAccepted ? '▼' : '▶'}</span>
+              Prihvaćene ponude ({acceptedOffers.length + acceptedPeerOffers.length})
+            </button>
+            {showAccepted && (
+              <div className={styles.tableWrap}>
+                {acceptedOffers.length === 0 && acceptedPeerOffers.length === 0 ? (
+                  <div className={styles.emptyTable}>Nema prihvaćenih ponuda.</div>
+                ) : (
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>STOCK</th><th>AMOUNT</th><th>PRICE</th><th>SETTLEMENT</th>
+                        <th>PREMIUM</th><th>PREGOVARA SA</th>
+                        <th style={{ textAlign: 'right' }}>AKCIJE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {acceptedOffers.map(offer => (
+                        <tr key={offer.otc_offer_id} onClick={() => openModal(offer)} style={{ cursor: 'pointer' }}>
+                          <td className={styles.ticker}>{offer.ticker ?? offer.stock_name ?? '—'}</td>
+                          <td>{offer.amount ?? '—'}</td>
+                          <td>{offer.price_per_stock_rsd != null ? `${Number(offer.price_per_stock_rsd).toFixed(2)} RSD` : '—'}</td>
+                          <td>{formatDate(offer.settlement_date)}</td>
+                          <td>{offer.premium_rsd != null ? `${Number(offer.premium_rsd).toFixed(2)} RSD` : '—'}</td>
+                          <td>{getCounterparty(offer)}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); openModal(offer); }}>Detalji</button>
+                          </td>
+                        </tr>
+                      ))}
+                      {acceptedPeerOffers.map(neg => {
+                        const rn = neg.id?.routingNumber;
+                        const negId = neg.id?.id;
+                        const offer = neg.offer ?? {};
+                        return (
+                          <tr key={`peer-acc-${rn}-${negId}`} onClick={() => setPeerSelected(neg)} style={{ cursor: 'pointer' }}>
+                            <td className={styles.ticker}>{offer.stock?.ticker ?? '—'}</td>
+                            <td>{offer.amount ?? '—'}</td>
+                            <td>{offer.pricePerUnit ? `${Number(offer.pricePerUnit.amount).toFixed(2)} ${offer.pricePerUnit.currency}` : '—'}</td>
+                            <td>{formatDate(offer.settlementDate)}</td>
+                            <td>{offer.premium ? `${Number(offer.premium.amount).toFixed(2)} ${offer.premium.currency}` : '—'}</td>
+                            <td>
+                              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', marginRight: 6, verticalAlign: 'middle' }}>PEER</span>
+                              {getPeerCounterpartyLabel(offer)}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); setPeerSelected(neg); }}>Detalji</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Odbijene ponude */}
+          <div>
+            <button
+              onClick={() => setShowRejected(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                width: '100%', padding: '12px 28px',
+                background: 'none', border: 'none',
+                borderTop: '1px solid var(--border)',
+                cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                color: 'var(--tx-2)', textAlign: 'left',
+              }}
+            >
+              <span style={{ fontSize: 10 }}>{showRejected ? '▼' : '▶'}</span>
+              Otkazane ponude ({rejectedOffers.length + rejectedPeerOffers.length})
+            </button>
+            {showRejected && (
+              <div className={styles.tableWrap}>
+                {rejectedOffers.length === 0 && rejectedPeerOffers.length === 0 ? (
+                  <div className={styles.emptyTable}>Nema odbijenih ponuda.</div>
+                ) : (
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>STOCK</th><th>AMOUNT</th><th>PRICE</th><th>SETTLEMENT</th>
+                        <th>PREMIUM</th><th>PREGOVARA SA</th>
+                        <th style={{ textAlign: 'right' }}>AKCIJE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rejectedOffers.map(offer => (
+                        <tr key={offer.otc_offer_id} onClick={() => openModal(offer)} style={{ cursor: 'pointer' }}>
+                          <td className={styles.ticker}>{offer.ticker ?? offer.stock_name ?? '—'}</td>
+                          <td>{offer.amount ?? '—'}</td>
+                          <td>{offer.price_per_stock_rsd != null ? `${Number(offer.price_per_stock_rsd).toFixed(2)} RSD` : '—'}</td>
+                          <td>{formatDate(offer.settlement_date)}</td>
+                          <td>{offer.premium_rsd != null ? `${Number(offer.premium_rsd).toFixed(2)} RSD` : '—'}</td>
+                          <td>{getCounterparty(offer)}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); openModal(offer); }}>Detalji</button>
+                          </td>
+                        </tr>
+                      ))}
+                      {rejectedPeerOffers.map(neg => {
+                        const rn = neg.id?.routingNumber;
+                        const negId = neg.id?.id;
+                        const offer = neg.offer ?? {};
+                        return (
+                          <tr key={`peer-rej-${rn}-${negId}`} onClick={() => setPeerSelected(neg)} style={{ cursor: 'pointer' }}>
+                            <td className={styles.ticker}>{offer.stock?.ticker ?? '—'}</td>
+                            <td>{offer.amount ?? '—'}</td>
+                            <td>{offer.pricePerUnit ? `${Number(offer.pricePerUnit.amount).toFixed(2)} ${offer.pricePerUnit.currency}` : '—'}</td>
+                            <td>{formatDate(offer.settlementDate)}</td>
+                            <td>{offer.premium ? `${Number(offer.premium.amount).toFixed(2)} ${offer.premium.currency}` : '—'}</td>
+                            <td>
+                              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', marginRight: 6, verticalAlign: 'middle' }}>PEER</span>
+                              {getPeerCounterpartyLabel(offer)}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <button className={styles.btnPrimary} onClick={e => { e.stopPropagation(); setPeerSelected(neg); }}>Detalji</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {selected && (
@@ -702,11 +899,16 @@ function AktivnePonude() {
                       ['Premium', selected.premium_rsd != null ? `${Number(selected.premium_rsd).toFixed(2)} RSD` : '—'],
                       ['Settlement', formatDate(selected.settlement_date)],
                       ['Status', selected.status ?? '—'],
+                      ['Red', isOngoingOffer ? (isMyTurnOffer ? 'Vaš red' : 'Čekanje na protivnika') : '—'],
                       ['Pregovara sa', getCounterparty(selected)],
                     ].map(([label, value]) => (
                       <div key={label} className={styles.summaryRow}>
                         <span className={styles.summaryLabel}>{label}:</span>
-                        <strong>{value}</strong>
+                        <strong style={label === 'Red' && isOngoingOffer
+                          ? { color: isMyTurnOffer ? '#16a34a' : '#64748b' }
+                          : undefined}>
+                          {value}
+                        </strong>
                       </div>
                     ))}
                   </div>
@@ -735,17 +937,23 @@ function AktivnePonude() {
                     )}
                   </div>
 
-                  <div className={styles.formActions}>
-                    <button className={styles.btnPrimary} disabled={actionLoading} onClick={handleAccept}>
-                      Prihvati
-                    </button>
-                    <button className={styles.btnGhost} disabled={actionLoading} onClick={() => setModalMode('counter')}>
-                      Kontraponuda
-                    </button>
-                    <button className={styles.btnGhost} disabled={actionLoading} onClick={handleReject}>
-                      Odustani
-                    </button>
-                  </div>
+                  {isOngoingOffer && (
+                    <div className={styles.formActions}>
+                      {isMyTurnOffer && (
+                        <>
+                          <button className={styles.btnPrimary} disabled={actionLoading} onClick={handleAccept}>
+                            Prihvati
+                          </button>
+                          <button className={styles.btnGhost} disabled={actionLoading} onClick={() => setModalMode('counter')}>
+                            Kontraponuda
+                          </button>
+                        </>
+                      )}
+                      <button className={styles.btnGhost} disabled={actionLoading} onClick={handleReject}>
+                        Odustani
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -843,6 +1051,7 @@ function SklopljeniUgovori() {
   const [exerciseLoading, setExerciseLoading] = useState(false);
   const [exerciseError, setExerciseError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [showOtherContracts, setShowOtherContracts] = useState(false);
 
   async function loadContracts() {
     try {
@@ -978,86 +1187,137 @@ function SklopljeniUgovori() {
         <div className={styles.emptyTable}>
           Nema {filter === 'expired' ? 'isteklih' : 'važećih'} ugovora.
         </div>
-      ) : (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>STOCK</th>
-                <th>AMOUNT</th>
-                <th>STRIKE PRICE</th>
-                <th>PREMIUM</th>
-                <th>SETTLEMENT DATE</th>
-                <th>SELLER INFO</th>
-                <th>PROFIT</th>
-                {filter === 'valid' && <th>AKCIJA</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(contract => (
-                <tr key={contract.otc_option_contract_id} className={isExpired(contract.settlement_date) ? styles.expiredRow : ''}>
-                  <td className={styles.ticker}>{contract.ticker}</td>
-                  <td>{contract.amount}</td>
-                  <td>{contract.strike_price_rsd}</td>
-                  <td>{contract.premium_rsd}</td>
-                  <td>{formatDate(contract.settlement_date)}</td>
-                  <td>Seller #{contract.seller_id}</td>
-                  <td className={contract.profit >= 0 ? styles.pos : styles.neg}>
-                    {contract.profit >= 0 ? '+' : ''}
-                    {Number(contract.profit ?? 0).toLocaleString('sr-RS', { minimumFractionDigits: 2 })} RSD
-                  </td>
-                  {filter === 'valid' && (
-                    <td>
-                      {Number(contract.buyer_id) === Number(partyId) && (
-                        <button className={styles.btnPrimary} onClick={() => openModal(contract)}>
-                          Iskoristi
-                        </button>
-                      )}
-                    </td>
+      ) : (() => {
+        const myContracts       = filtered.filter(c => Number(c.buyer_id) === Number(partyId));
+        const otherContracts    = filtered.filter(c => Number(c.buyer_id) !== Number(partyId));
+        const myPeerContracts   = filteredPeer.filter(c => c.myContract);
+        const otherPeerContracts = filteredPeer.filter(c => !c.myContract);
+        const colSpan = filter === 'valid' ? 8 : 7;
+
+        function renderRegularRow(contract) {
+          return (
+            <tr key={contract.otc_option_contract_id} className={isExpired(contract.settlement_date) ? styles.expiredRow : ''}>
+              <td className={styles.ticker}>{contract.ticker}</td>
+              <td>{contract.amount}</td>
+              <td>{contract.strike_price_rsd}</td>
+              <td>{contract.premium_rsd}</td>
+              <td>{formatDate(contract.settlement_date)}</td>
+              <td>Seller #{contract.seller_id}</td>
+              <td className={contract.profit != null && contract.profit >= 0 ? styles.pos : styles.neg}>
+                {contract.profit != null
+                  ? `${contract.profit >= 0 ? '+' : ''}${Number(contract.profit).toLocaleString('sr-RS', { minimumFractionDigits: 2 })} RSD`
+                  : '—'}
+              </td>
+              {filter === 'valid' && (
+                <td>
+                  {Number(contract.buyer_id) === Number(partyId) && (
+                    <button className={styles.btnPrimary} onClick={() => openModal(contract)}>
+                      Iskoristi
+                    </button>
                   )}
-                </tr>
-              ))}
-              {filteredPeer.map(contract => {
-                const rn = contract.id?.routingNumber;
-                const cId = contract.id?.id;
-                const canExercise = isSelfPeer(contract.buyerId, user);
-                return (
-                  <tr key={`peer-${rn}-${cId}`} className={isExpired(contract.settlementDate) ? styles.expiredRow : ''}>
-                    <td className={styles.ticker}>
-                      {contract.ticker}
-                      <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', verticalAlign: 'middle' }}>
-                        PEER
-                      </span>
-                    </td>
-                    <td>{contract.amount}</td>
-                    <td>{contract.strikePrice ? `${Number(contract.strikePrice.amount).toFixed(2)} ${contract.strikePrice.currency}` : '—'}</td>
-                    <td>{contract.premium ? `${Number(contract.premium.amount).toFixed(2)} ${contract.premium.currency}` : '—'}</td>
-                    <td>{formatDate(contract.settlementDate)}</td>
-                    <td>Seller {contract.sellerId?.id?.slice(0, 8)}… ({getBankName(contract.sellerId?.routingNumber)})</td>
-                    <td>—</td>
-                    {filter === 'valid' && (
-                      <td>
-                        {canExercise && (
-                          <button
-                            className={styles.btnPrimary}
-                            onClick={() => {
-                              setPeerConfirmModal(contract);
-                              setPeerExerciseAccount('');
-                              setPeerExerciseError('');
-                            }}
-                          >
-                            Iskoristi
-                          </button>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                </td>
+              )}
+            </tr>
+          );
+        }
+
+        function renderPeerRow(contract) {
+          const rn = contract.id?.routingNumber;
+          const cId = contract.id?.id;
+          return (
+            <tr key={`peer-${rn}-${cId}`} className={isExpired(contract.settlementDate) ? styles.expiredRow : ''}>
+              <td className={styles.ticker}>
+                {contract.ticker}
+                <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', verticalAlign: 'middle' }}>
+                  PEER
+                </span>
+              </td>
+              <td>{contract.amount}</td>
+              <td>{contract.strikePrice ? `${Number(contract.strikePrice.amount).toFixed(2)} ${contract.strikePrice.currency}` : '—'}</td>
+              <td>{contract.premium ? `${Number(contract.premium.amount).toFixed(2)} ${contract.premium.currency}` : '—'}</td>
+              <td>{formatDate(contract.settlementDate)}</td>
+              <td>Seller {contract.sellerId?.id?.slice(0, 8)}… ({getBankName(contract.sellerId?.routingNumber)})</td>
+              <td>—</td>
+              {filter === 'valid' && (
+                <td>
+                  {contract.myContract && (
+                    <button
+                      className={styles.btnPrimary}
+                      onClick={() => { setPeerConfirmModal(contract); setPeerExerciseAccount(''); setPeerExerciseError(''); }}
+                    >
+                      Iskoristi
+                    </button>
+                  )}
+                </td>
+              )}
+            </tr>
+          );
+        }
+
+        const thead = (
+          <thead>
+            <tr>
+              <th>STOCK</th>
+              <th>AMOUNT</th>
+              <th>STRIKE PRICE</th>
+              <th>PREMIUM</th>
+              <th>SETTLEMENT DATE</th>
+              <th>SELLER INFO</th>
+              <th>PROFIT</th>
+              {filter === 'valid' && <th>AKCIJA</th>}
+            </tr>
+          </thead>
+        );
+
+        return (
+          <>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                {thead}
+                <tbody>
+                  {myContracts.length === 0 && myPeerContracts.length === 0 && (
+                    <tr><td colSpan={colSpan} className={styles.emptyTable}>Nema vaših ugovora.</td></tr>
+                  )}
+                  {myContracts.map(renderRegularRow)}
+                  {myPeerContracts.map(renderPeerRow)}
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <button
+                onClick={() => setShowOtherContracts(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', padding: '12px 28px',
+                  background: 'none', border: 'none',
+                  borderTop: '1px solid var(--border)',
+                  cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                  color: 'var(--tx-2)', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 10 }}>{showOtherContracts ? '▼' : '▶'}</span>
+                Peer contracts ({otherContracts.length + otherPeerContracts.length})
+              </button>
+              {showOtherContracts && (
+                <div className={styles.tableWrap}>
+                  {otherContracts.length === 0 && otherPeerContracts.length === 0 ? (
+                    <div className={styles.emptyTable}>Nema peer ugovora.</div>
+                  ) : (
+                    <table className={styles.table}>
+                      {thead}
+                      <tbody>
+                        {otherContracts.map(renderRegularRow)}
+                        {otherPeerContracts.map(renderPeerRow)}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
 
       {confirmModal && (
         <ConfirmModal

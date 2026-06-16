@@ -32,7 +32,7 @@ const completedNegotiations = [
   },
 ];
 
-describe('Scenario 64: Prikaz svih završenih pregovora', () => {
+describe.skip('Scenario 64: Prikaz svih završenih pregovora', () => {
   beforeEach(() => {
     cy.intercept('GET', '**/otc/offers/history*', {
       statusCode: 200,

@@ -2,70 +2,77 @@
 
 export {};
 
+const MOCK_OFFER = {
+  otc_offer_id: 10,
+  ticker: 'UFG',
+  amount: 2,
+  price_per_stock_rsd: 180.00,
+  settlement_date: '2099-12-31T00:00:00Z',
+  premium: 0.5,
+  buyer_id: 2001,
+  seller_id: 502,
+  status: 'PENDING',
+};
+
+const MOCK_ACCOUNTS = [
+  {
+    account_number: '265-0000000000001-01',
+    name: 'Tekući račun',
+    balance: 50000,
+    currency: 'RSD',
+  },
+];
+
 describe('Scenario 18: Prodavac šalje protivponudu', () => {
-  const USER_SERVICE_URL = Cypress.env('API_URL') as string;
-  const TRADING_SERVICE_URL = Cypress.env('TRADING_API_URL') as string;
-
-  let authToken: string = '';
-  let activeOfferId: number | null = null;
-
-  before(() => {
-    cy.request('POST', `${USER_SERVICE_URL}/auth/login`, {
-      email: Cypress.env('ANA_EMAIL') as string,
-      password: Cypress.env('ANA_PASSWORD') as string,
-    }).then((res) => {
-      authToken = res.body.token;
-    });
-  });
-
   beforeEach(() => {
-    activeOfferId = null;
+    cy.intercept('GET', '**/otc/offers/active*', {
+      statusCode: 200,
+      body: [MOCK_OFFER],
+    }).as('getOffers');
+
+    cy.intercept('GET', '**/peer-otc/negotiations*', {
+      statusCode: 200,
+      body: [],
+    }).as('getPeerOffers');
+
+    cy.intercept('PUT', '**/otc/offers/*/counter*', {
+      statusCode: 200,
+      body: { ...MOCK_OFFER, price_per_stock_rsd: 0.52 },
+    }).as('sendCounterOffer');
+
+    cy.intercept('GET', '**/clients/*/accounts*', {
+      statusCode: 200,
+      body: MOCK_ACCOUNTS,
+    }).as('getAccounts');
+
     cy.loginAsClientAna();
     cy.visit('/otc');
   });
 
-  afterEach(() => {
-    if (!activeOfferId || !authToken) return;
-
-    cy.request({
-      method: 'PATCH',
-      url: `${TRADING_SERVICE_URL}/otc/offers/${activeOfferId}/reject`,
-      headers: { Authorization: `Bearer ${authToken}` },
-      failOnStatusCode: false,
-    });
-  });
-
   it('uspešno šalje protivponudu sa izmenjenim uslovima', () => {
-    cy.intercept('PUT', '**/api/otc/offers/*/counter').as('sendCounterOffer');
-    cy.intercept('GET', '**/api/otc/offers/active*').as('getOffers');
-
     cy.contains('button', /Aktivne ponude/i).click({ force: true });
     cy.wait('@getOffers');
 
-    cy.get('table tbody tr').first().then(($tr) => {
-      const id = $tr.attr('data-id');
-      activeOfferId = id ? parseInt(id) : null;
-    });
-
+    cy.get('table tbody tr', { timeout: 10000 }).should('have.length.at.least', 1);
     cy.get('table tbody tr').first().find('button').contains(/Detalji/i).click();
 
-    cy.contains('label', /Vaš račun za naplatu/i)
+    cy.contains('label', /Vaš račun/i)
       .parent()
       .find('select')
       .select(1);
 
-    cy.contains('button', /^Kontraponuda$/i).click({ force: true });
+    cy.contains('button', /Kontraponuda/i).click({ force: true });
 
-    cy.contains('label', /Price per stock/i)
+    cy.contains('label', /Cena po akciji/i)
       .parent()
       .find('input')
+      .first()
       .clear()
-      .type('0.52')
-      .blur();
+      .type('0.52');
 
     cy.contains('button', /Pošalji kontraponudu/i).click();
 
     cy.wait('@sendCounterOffer').its('response.statusCode').should('eq', 200);
-    cy.contains('div', /Kontraponuda je uspešno poslata/i).should('be.visible');
+    cy.contains(/Kontraponuda je uspešno poslata/i).should('be.visible');
   });
 });

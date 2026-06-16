@@ -2,12 +2,12 @@ import { apiUrl, buildActuaries, loginAs, supervisorUser } from './helpers';
 
 describe('Scenario 4: Unos nevalidnog limita', () => {
   it('odbija 0 i negativnu vrednost i ne salje PATCH', () => {
-    cy.intercept('GET', `${apiUrl()}/actuaries*`, {
+    cy.intercept('GET', `**/actuaries*`, {
       statusCode: 200,
       body: { data: buildActuaries({ limit: 100000, used_limit: 30000 }) },
     }).as('getActuaries');
 
-    cy.intercept('PATCH', `${apiUrl()}/actuaries/101`, {
+    cy.intercept('PATCH', `**/actuaries/101`, {
       statusCode: 200,
       body: { ok: true },
     }).as('changeLimit');

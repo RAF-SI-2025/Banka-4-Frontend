@@ -22,12 +22,12 @@ describe('Scenario 13: Admin menja podatke zaposlenog', () => {
         };
         let isUpdated = false;
 
-        cy.intercept('POST', `${apiUrl}/auth/refresh*`, {
+        cy.intercept('POST', `**/auth/refresh*`, {
             statusCode: 200,
             body: { token: 'fake-access', refresh_token: 'fake-refresh' },
         }).as('refresh');
 
-        cy.intercept('GET', `${apiUrl}/employees*`, (req) => {
+        cy.intercept('GET', `**/employees*`, (req) => {
             req.reply({
                 statusCode: 200,
                 body: {
@@ -49,7 +49,7 @@ describe('Scenario 13: Admin menja podatke zaposlenog', () => {
             });
         }).as('getEmployees');
 
-        cy.intercept('GET', `${apiUrl}/employees/${employeeId}*`, (req) => {
+        cy.intercept('GET', `**/employees/*`, (req) => {
             req.reply({
                 statusCode: 200,
                 body: isUpdated
@@ -71,7 +71,7 @@ describe('Scenario 13: Admin menja podatke zaposlenog', () => {
             });
         }).as('getEmployee');
 
-        cy.intercept('PATCH', `${apiUrl}/employees/${employeeId}*`, (req) => {
+        cy.intercept('PATCH', `**/employees/*`, (req) => {
             expect(req.body).to.include({
                 first_name: updatedEmployee.first_name,
                 phone_number: updatedEmployee.phone_number,

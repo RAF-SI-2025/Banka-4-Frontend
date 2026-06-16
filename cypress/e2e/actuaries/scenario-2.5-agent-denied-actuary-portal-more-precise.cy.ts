@@ -4,7 +4,7 @@ import { agentUser, loginAs, apiUrl } from './helpers';
 describe('Scenario 2.5: Agent nema pristup portalu za upravljanje aktuarima (preciznija provera)', () => {
   it('SupervisorRoute blokira agenta jer nema supervisor permisije', () => {
     // Mock API pozive da bi se izbegla 401 greška
-    cy.intercept('GET', `${apiUrl()}/**`, { statusCode: 200, body: {} }).as('apiCall');
+    cy.intercept('GET', `**`, { statusCode: 200, body: {} }).as('apiCall');
 
     // Verifikuj da agent nema potrebnu permisiju
     expect(agentUser.permissions).to.not.include('supervisor');

@@ -3,7 +3,7 @@ describe('Scenario 2: Kreiranje deviznog racuna za klijenta', () => {
         cy.loginAsAdmin();
         const apiUrl = Cypress.env('API_URL');
 
-        cy.intercept('GET', `${apiUrl}/clients*`, {
+        cy.intercept('GET', `**/clients*`, {
             statusCode: 200,
             body: { data: [{ id: 501, first_name: 'Test', last_name: 'Klijent', email: 'klijent@gmail.com' }] },
         }).as('searchClient');

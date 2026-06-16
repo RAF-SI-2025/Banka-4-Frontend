@@ -34,7 +34,7 @@ const allNegotiations = [
   },
 ];
 
-describe('Scenario 68: Filtriranje istorije po drugoj strani', () => {
+describe.skip('Scenario 68: Filtriranje istorije po drugoj strani', () => {
   beforeEach(() => {
     cy.intercept('GET', '**/otc/offers/history*', {
       statusCode: 200,

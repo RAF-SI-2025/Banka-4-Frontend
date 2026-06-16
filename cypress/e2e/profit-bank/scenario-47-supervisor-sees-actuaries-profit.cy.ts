@@ -2,17 +2,17 @@ import { loginAs, mockActuaries, supervisorUser, tradingApiUrl, bankingApiUrl } 
 
 describe('Scenario 47: Supervizor vidi spisak aktuara sa profitom', () => {
   beforeEach(() => {
-    cy.intercept('GET', `${tradingApiUrl()}/profit/actuaries`, {
+    cy.intercept('GET', `**/profit/actuaries`, {
       statusCode: 200,
       body: mockActuaries,
     }).as('getActuaryPerformances');
 
-    cy.intercept('GET', `${tradingApiUrl()}/profit/funds`, {
+    cy.intercept('GET', `**/profit/funds`, {
       statusCode: 200,
       body: [],
     }).as('getFundPositions');
 
-    cy.intercept('GET', `${bankingApiUrl()}/accounts**`, {
+    cy.intercept('GET', `**/accounts**`, {
       statusCode: 200,
       body: { data: [] },
     }).as('getAccounts');
@@ -22,7 +22,7 @@ describe('Scenario 47: Supervizor vidi spisak aktuara sa profitom', () => {
       body: [],
     }).as('getActuaryPortfolio');
 
-    cy.intercept('GET', `${tradingApiUrl()}/investment-funds**`, {
+    cy.intercept('GET', `**/investment-funds**`, {
       statusCode: 200,
       body: { data: [], total: 0 },
     }).as('getFunds');

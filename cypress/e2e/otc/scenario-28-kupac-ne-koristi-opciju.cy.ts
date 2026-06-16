@@ -1,8 +1,8 @@
 describe('Scenario 28: Kupac ne iskorišćava opciju - gubi samo premiju', () => {
-  const TRADING_API_URL = 'http://rafsi.davidovic.io:8082/api';
+  
 
   beforeEach(() => {
-    cy.intercept('GET', `${TRADING_API_URL}/otc/contracts**`).as('getContracts');
+    cy.intercept('GET', `**/otc/contracts**`).as('getContracts');
     cy.loginAsClient();
     cy.visit('/otc');
   });

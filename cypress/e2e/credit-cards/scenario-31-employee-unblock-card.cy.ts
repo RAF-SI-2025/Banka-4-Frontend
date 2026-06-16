@@ -3,7 +3,7 @@ describe('Scenario 31: Odblokiranje kartice od strane zaposlenog', () => {
         cy.loginAsAdmin();
         const apiUrl = Cypress.env('API_URL');
 
-        cy.intercept('GET', `${apiUrl}/clients*`, {
+        cy.intercept('GET', `**/clients*`, {
             statusCode: 200,
             body: {
                 data: [

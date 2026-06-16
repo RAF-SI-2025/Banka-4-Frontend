@@ -8,7 +8,7 @@ describe('Feature 1 - Autentifikacija korisnika', () => {
 
         const activationToken = `e2e-activation-token-${Date.now()}`;
 
-        cy.intercept('POST', `${apiUrl}/employees/register`, (req) => {
+        cy.intercept('POST', `**/employees/register`, (req) => {
             req.reply({
                 statusCode: 201,
                 body: {
@@ -21,7 +21,7 @@ describe('Feature 1 - Autentifikacija korisnika', () => {
             });
         }).as('registerEmployee');
 
-        cy.intercept('GET', `${apiUrl}/employees?page=*&page_size=*`, {
+        cy.intercept('GET', `**/employees*`, {
             statusCode: 200,
             body: {
                 data: [],
@@ -67,7 +67,7 @@ describe('Feature 1 - Autentifikacija korisnika', () => {
 
         const newPassword = 'TestPass12';
 
-        cy.intercept('POST', `${apiUrl}/auth/activate`, (req) => {
+        cy.intercept('POST', `**/auth/activate`, (req) => {
             expect(req.body).to.deep.equal({ token: activationToken, password: newPassword });
             req.reply({
                 statusCode: 200,
@@ -87,7 +87,7 @@ describe('Feature 1 - Autentifikacija korisnika', () => {
         cy.contains('Idi na prijavu').click();
         cy.url().should('include', '/login');
 
-        cy.intercept('POST', `${apiUrl}/auth/login`, (req) => {
+        cy.intercept('POST', `**/auth/login`, (req) => {
             expect(req.body).to.deep.equal({ email, password: newPassword });
             req.reply({
                 statusCode: 200,

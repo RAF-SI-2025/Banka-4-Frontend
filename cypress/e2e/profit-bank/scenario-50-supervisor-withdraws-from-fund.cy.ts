@@ -2,17 +2,17 @@ import { loginAs, mockBankAccounts, mockFunds, supervisorUser, tradingApiUrl, ba
 
 describe('Scenario 50: Supervizor povlači novac iz fonda za banku - bez provizije', () => {
   beforeEach(() => {
-    cy.intercept('GET', `${tradingApiUrl()}/profit/actuaries`, {
+    cy.intercept('GET', `**/profit/actuaries`, {
       statusCode: 200,
       body: [],
     }).as('getActuaryPerformances');
 
-    cy.intercept('GET', `${tradingApiUrl()}/profit/funds`, {
+    cy.intercept('GET', `**/profit/funds`, {
       statusCode: 200,
       body: mockFunds,
     }).as('getFundPositions');
 
-    cy.intercept('GET', `${bankingApiUrl()}/accounts**`, {
+    cy.intercept('GET', `**/accounts**`, {
       statusCode: 200,
       body: mockBankAccounts,
     }).as('getAccounts');
@@ -22,7 +22,7 @@ describe('Scenario 50: Supervizor povlači novac iz fonda za banku - bez provizi
       body: [],
     }).as('getActuaryPortfolio');
 
-    cy.intercept('GET', `${tradingApiUrl()}/investment-funds**`, {
+    cy.intercept('GET', `**/investment-funds**`, {
       statusCode: 200,
       body: { data: [], total: 0 },
     }).as('getFunds');
@@ -32,7 +32,7 @@ describe('Scenario 50: Supervizor povlači novac iz fonda za banku - bez provizi
       body: { token: 'test-token', refresh_token: 'test-refresh-token' },
     }).as('tokenRefresh');
 
-    cy.intercept('POST', `${tradingApiUrl()}/investment-funds/*/withdraw`, (req) => {
+    cy.intercept('POST', `**/investment-funds/*/withdraw`, (req) => {
       expect(req.body).to.not.have.property('commission');
       req.reply({ statusCode: 200, body: { message: 'Povlačenje uspešno.' } });
     }).as('withdrawFromFund');

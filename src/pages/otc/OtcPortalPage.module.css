@@ -250,25 +250,63 @@
   margin-bottom: 16px;
 }
 
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 13px; font-weight: 500; color: var(--tx-1); }
-.field select {
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-  color: var(--tx-1);
-  background: white;
-  cursor: pointer;
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field:last-of-type { margin-bottom: 0; }
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tx-2);
 }
-.required { color: #dc2626; }
-.errorText { font-size: 13px; color: #dc2626; margin: 10px 0 0; }
+.field input,
+.field select {
+  height: 42px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: var(--font);
+  color: var(--tx-1);
+  background: var(--input-bg);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.field select { cursor: pointer; }
+.inputWithCurrency {
+  display: flex;
+  gap: 8px;
+}
+.inputWithCurrency input { flex: 1; }
+.currencySelect {
+  width: 86px !important;
+  flex-shrink: 0;
+}
+.field input:focus,
+.field select:focus {
+  border-color: var(--border-focus);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.required { color: var(--red, #dc2626); }
+.errorText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--red, #dc2626);
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: rgba(239,68,68,0.07);
+  border-radius: 6px;
+}
 
 .formActions {
   display: flex;
   gap: 10px;
   padding: 16px 24px;
   border-top: 1px solid var(--border);
+  margin-top: 4px;
 }
 .formActions .btnGhost { flex: 1; }
 .formActions .btnPrimary { flex: 2; }

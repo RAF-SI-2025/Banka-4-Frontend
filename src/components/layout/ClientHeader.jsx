@@ -73,12 +73,13 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
   ];
 
   const trzisteSubItems = [
-    { label: 'Moji orderi', path: '/orders/my' },
-    { label: 'DTC',         path: '/client/dtc' },
-    { label: 'Fondovi',     path: '/investment-funds' },
+    { label: 'Hartije',        path: '/client/securities' },
+    { label: 'Moji orderi',    path: '/orders/my' },
+    { label: 'DTC',            path: '/client/dtc' },
+    { label: 'Fondovi',        path: '/investment-funds' },
   ];
 
-  const trzisteActive = ['dtc', 'orders', 'fondovi'].includes(activeNav);
+  const trzisteActive = ['dtc', 'orders', 'fondovi', 'securities'].includes(activeNav);
 
   return (
     <header className={styles.header}>
@@ -150,13 +151,6 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
         >
           Krediti
         </button>
-        <button
-          className={`${styles.headerNavBtn} ${activeNav === 'securities' ? styles.headerNavBtnActive : ''}`}
-          onClick={() => navigate('/client/securities')}
-        >
-          Hartije
-        </button>
-
         {/* Tržište dropdown */}
         <div className={styles.payDropdownWrap} ref={trzisteRef}>
           <button
@@ -227,25 +221,6 @@ export default function ClientHeader({ activeNav, onProfileClick }) {
 
       <WatchlistWidget />
       <PriceAlertsWidget />
-
-      <button
-        type="button"
-        className={styles.notifBtn}
-        onClick={() => {
-          // ovo resetuje badge kad korisnik "pogleda"
-          clear();
-          navigate('/otc?tab=AKTIVNE');
-        }}
-        title="OTC notifikacije"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-        {otcCount > 0 && (
-          <span className={styles.notifBadge}>{otcCount}</span>
-        )}
-      </button>
 
       <Toast open={toastOpen} message={toastMsg} onClose={closeToast} />
 

@@ -2,12 +2,12 @@ import { apiUrl, buildActuaries, loginAs, supervisorUser } from './helpers';
 
 describe('Scenario 5: Supervizor resetuje usedLimit agentu', () => {
     it('postavlja usedLimit na 0 i prikazuje uspesnu poruku', () => {
-        cy.intercept('GET', `${apiUrl()}/actuaries*`, {
+        cy.intercept('GET', `**/actuaries*`, {
             statusCode: 200,
             body: { data: buildActuaries({ used_limit: 45000 }) },
         }).as('getActuaries');
 
-        cy.intercept('POST', `${apiUrl()}/actuaries/101/reset-used-limit`, {
+        cy.intercept('POST', `**/actuaries/*/reset-used-limit`, {
             statusCode: 200,
             body: { ok: true },
         }).as('resetUsedLimit');

@@ -8,7 +8,7 @@ describe('Scenario 18: Verifikacija praznih permisija za novog korisnika', () =>
 
         const employeeId = 99018;
 
-        cy.intercept('POST', `${apiUrl}/employees/register`, (req) => {
+        cy.intercept('POST', `**/employees/register`, (req) => {
             expect(req.body.permissions).to.deep.equal([]);
             req.reply({
                 statusCode: 201,
@@ -21,7 +21,7 @@ describe('Scenario 18: Verifikacija praznih permisija za novog korisnika', () =>
             });
         }).as('registerEmployee');
 
-        cy.intercept('GET', `${apiUrl}/employees?page=*&page_size=*`, {
+        cy.intercept('GET', `**/employees*`, {
             statusCode: 200,
             body: {
                 data: [],
@@ -31,7 +31,7 @@ describe('Scenario 18: Verifikacija praznih permisija za novog korisnika', () =>
             },
         }).as('employeesList');
 
-        cy.intercept('GET', `${apiUrl}/employees/${employeeId}*`, {
+        cy.intercept('GET', `**/employees/*`, {
             statusCode: 200,
             body: {
                 id: employeeId,

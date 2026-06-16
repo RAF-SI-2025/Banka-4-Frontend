@@ -7,7 +7,7 @@ describe('Scenario 56: Filtriranje ordera po statusu Pending', () => {
 
   it('kada supervizor izabere filter Pending, prikazuju se samo Pending orderi', () => {
     cy.visit('http://localhost:5173/supervisor/orders');
-    cy.contains('button', /^Pending$/i, { timeout: 20000 }).click();
+    cy.contains('button', /Na čekanju/i, { timeout: 20000 }).click();
   });
 });
 

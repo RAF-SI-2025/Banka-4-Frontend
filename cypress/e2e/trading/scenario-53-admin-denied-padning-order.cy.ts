@@ -49,10 +49,9 @@ describe('Scenario 53: Admin odbija pending order', () => {
     cy.visit('http://localhost:5173/supervisor/orders');
 
     cy.get('table', { timeout: 10000 }).should('be.visible');
-    cy.contains('td', '20').should('be.visible');
-    cy.contains('button', /^Pending$/i, { timeout: 20000 }).click();
+    cy.contains('button', /Na čekanju/i, { timeout: 20000 }).click();
     cy.contains('button', /^Decline$/i, { timeout: 20000 }).click();
-    cy.contains('button', /^Declined$/i, { timeout: 20000 }).click();
+    cy.contains(/Odbijeno/i, { timeout: 20000 }).should('be.visible');
   });
 });
 

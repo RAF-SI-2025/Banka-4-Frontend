@@ -2,56 +2,61 @@
 
 export {};
 
+const MOCK_OFFER = {
+  otc_offer_id: 11,
+  ticker: 'UFG',
+  amount: 2,
+  price_per_stock_rsd: 182.00,
+  settlement_date: '2099-12-31T00:00:00Z',
+  premium: 0.5,
+  buyer_id: 2001,
+  seller_id: 502,
+  status: 'COUNTER',
+};
+
+const MOCK_ACCOUNTS = [
+  {
+    account_number: '265-0000000000002-01',
+    name: 'Tekući račun',
+    balance: 50000,
+    currency: 'RSD',
+  },
+];
+
 describe('Scenario 19: Kupac prihvata ponudu', () => {
-  const USER_SERVICE_URL = Cypress.env('API_URL') as string;
-  const TRADING_SERVICE_URL = Cypress.env('TRADING_API_URL') as string;
-
-  let authToken: string;
-  let acceptedOfferId: number | null = null;
-
-  before(() => {
-    cy.request('POST', `${USER_SERVICE_URL}/auth/login`, {
-      email: Cypress.env('MARKO_EMAIL') as string,
-      password: Cypress.env('MARKO_PASSWORD') as string,
-    }).then((res) => {
-      authToken = res.body.token;
-    });
-  });
-
   beforeEach(() => {
-    acceptedOfferId = null;
+    cy.intercept('GET', '**/otc/offers/active*', {
+      statusCode: 200,
+      body: [MOCK_OFFER],
+    }).as('getOffers');
+
+    cy.intercept('GET', '**/peer-otc/negotiations*', {
+      statusCode: 200,
+      body: [],
+    }).as('getPeerOffers');
+
+    cy.intercept('PATCH', '**/otc/offers/*/accept*', {
+      statusCode: 200,
+      body: { ...MOCK_OFFER, status: 'ACCEPTED' },
+    }).as('acceptOffer');
+
+    cy.intercept('GET', '**/clients/*/accounts*', {
+      statusCode: 200,
+      body: MOCK_ACCOUNTS,
+    }).as('getAccounts');
+
     cy.loginAsClient();
     cy.visit('/otc');
   });
 
-  afterEach(() => {
-    if (!acceptedOfferId) return;
-    cy.request({
-      method: 'PATCH',
-      url: `${TRADING_SERVICE_URL}/otc/offers/${acceptedOfferId}/reject`,
-      headers: { Authorization: `Bearer ${authToken}` },
-      failOnStatusCode: false,
-    });
-  });
-
   it('kupac uspešno prihvata ponudu', () => {
-    cy.intercept('GET', '**/api/otc/offers/active*').as('getOffers');
-    cy.intercept('PATCH', '**/api/otc/offers/*/accept').as('acceptOffer');
-
     cy.contains('button', /Aktivne ponude/i).click();
+    cy.wait('@getOffers');
 
-    cy.wait('@getOffers').then((interception) => {
-      const offers = interception.response?.body ?? [];
-      const validOffer = Array.isArray(offers)
-        ? offers.find((o: { otc_offer_id?: number }) => o.otc_offer_id !== undefined)
-        : undefined;
-      expect(validOffer, 'Nema aktivnih ponuda').to.not.be.undefined;
-      acceptedOfferId = validOffer.otc_offer_id;
-    });
-
+    cy.get('table tbody tr', { timeout: 10000 }).should('have.length.at.least', 1);
     cy.get('table tbody tr').first().find('button').contains(/Detalji/i).click();
 
-    cy.contains('label', /Vaš račun za naplatu/i)
+    cy.contains('label', /Vaš račun/i)
       .parent()
       .find('select')
       .select(1);

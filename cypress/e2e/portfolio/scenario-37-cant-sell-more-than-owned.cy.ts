@@ -5,6 +5,25 @@ export {};
 describe('Scenario 37: Korisnik ne može prodati više hartija nego što poseduje', () => {
 
   beforeEach(() => {
+    cy.intercept('GET', '**/client/**/assets*', {
+      statusCode: 200,
+      body: [
+        {
+          ticker: 'AAPL',
+          type: 'STOCK',
+          amount: 10,
+          averageBuyingPrice: 150.00,
+          profit: 250.00,
+          publiclyAvailable: 5,
+        },
+      ],
+    }).as('getAssets');
+
+    cy.intercept('GET', '**/client/**/accumulated-tax*', {
+      statusCode: 200,
+      body: { totalTax: 0 },
+    }).as('getTax');
+
     cy.loginAsClientAna();
     cy.visit('/client/portfolio');
   });
@@ -17,7 +36,7 @@ describe('Scenario 37: Korisnik ne može prodati više hartija nego što poseduj
       const ownedAmount = parseFloat(ownedAmountText) || 1;
       const tooMuch = ownedAmount + 5;
 
-      cy.wrap($row).find('button').contains('SELL').click({ force: true });
+      cy.wrap($row).find('button').contains(/PRODAJ/i).click({ force: true });
 
       cy.get('select').eq(1).should('not.contain', 'Učitavanje...');
       cy.get('select').eq(1).select(1, { force: true });
@@ -42,7 +61,7 @@ describe('Scenario 37: Korisnik ne može prodati više hartija nego što poseduj
 
   it('forma ne prelazi na potvrdu čak i uz forsirani klik sa ekstremnom količinom', () => {
     cy.get('table', { timeout: 10000 }).should('be.visible');
-    cy.contains('button', 'SELL').first().click({ force: true });
+    cy.contains('button', /PRODAJ/i).first().click({ force: true });
 
     cy.get('select').eq(1).should('not.contain', 'Učitavanje...');
     cy.get('select').eq(1).select(1, { force: true });

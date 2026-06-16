@@ -3,7 +3,7 @@ import { apiUrl, buildActuaries, loginAs, supervisorUser } from './helpers';
 
 describe('Scenario 1: Supervizor moze da otvori portal za upravljanje aktuarima', () => {
   it('prikazuje listu, filtere i akcije nad agentom', () => {
-    cy.intercept('GET', `${apiUrl()}/actuaries*`, {
+    cy.intercept('GET', `**/actuaries*`, {
       statusCode: 200,
       body: { data: buildActuaries() },
     }).as('getActuaries');

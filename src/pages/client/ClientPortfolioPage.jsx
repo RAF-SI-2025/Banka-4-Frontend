@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import gsap from 'gsap';
 import { useAuthStore } from '../../store/authStore';
 import { portfolioApi } from '../../api/endpoints/portfolio';
+import { taxApi }       from '../../api/endpoints/tax';
 import { otcApi } from '../../api/endpoints/otc';
 import ClientHeader from '../../components/layout/ClientHeader';
 import PortfolioTable from '../../features/portfolio/PortfolioTable';
@@ -19,7 +20,7 @@ export default function ClientPortfolioPage() {
   useEffect(() => { document.title = 'RAFBank | Moj Portfolio'; }, []);
   const pageRef = useRef(null);
 
-  const [portfolio, setPortfolio] = useState({ stocks: [], tax: { taxPaid: 0, taxUnpaid: 0 } });
+  const [portfolio, setPortfolio] = useState({ stocks: [], tax: { taxUnpaid: 0 } });
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [sellModal, setSellModal] = useState(null);
@@ -43,12 +44,16 @@ export default function ClientPortfolioPage() {
         setError(null);
         const clientId = user.client_id ?? user.clientId ?? user.identity_id ?? user.identityId ?? user.id;
         
-        const res = await portfolioApi.getClientPortfolio(clientId);
+        const [res, taxRes] = await Promise.all([
+          portfolioApi.getClientPortfolio(clientId),
+          taxApi.getClientTax(clientId).catch(() => null),
+        ]);
         const rawData = res?.data || res;
+        const taxData = taxRes?.data ?? taxRes;
         const allAssets = Array.isArray(rawData) ? rawData : (rawData?.assets ?? []);
         setPortfolio({
           stocks: allAssets.filter(a => a.type?.toUpperCase() !== 'OPTION'),
-          tax: rawData?.tax ?? { taxPaid: 0, taxUnpaid: 0 },
+          tax: { taxUnpaid: taxData?.totalTax ?? 0 },
         });
       } catch (err) {
         console.error('[ClientPortfolioPage] Error loading portfolio:', {
@@ -65,8 +70,7 @@ export default function ClientPortfolioPage() {
           setError('Nije moguće učitati podatke portfolija.');
         }
         
-        // Still set default empty portfolio so page doesn't crash
-        setPortfolio({ stocks: [], tax: { taxPaid: 0, taxUnpaid: 0 } });
+        setPortfolio({ stocks: [], tax: { taxUnpaid: 0 } });
       } finally {
         setLoading(false);
       }

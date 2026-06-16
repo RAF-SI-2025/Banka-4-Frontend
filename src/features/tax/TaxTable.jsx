@@ -37,7 +37,6 @@ export default function TaxTable({ users = [], loading = false }) {
             <th>Email</th>
             <th>Tim</th>
             <th>Dugovanje (RSD)</th>
-            <th>Plaćeno (RSD)</th>
             <th>Status poreza</th>
           </tr>
         </thead>
@@ -80,9 +79,6 @@ export default function TaxTable({ users = [], loading = false }) {
                       {formatRsd(user.tax_debt)}
                     </span>
                   </td>
-                  <td className={styles.amountCell}>
-                    <span className={styles.amountPaid}>{formatRsd(user.tax_paid)}</span>
-                  </td>
                   <td>
                     <span className={`${styles.statusBadge} ${STATUS_CLASS[user.tax_status] ?? ''}`}>
                       {user.tax_status}
@@ -92,7 +88,7 @@ export default function TaxTable({ users = [], loading = false }) {
 
                 {isExpanded && hasAccounts && (
                   <tr className={styles.expandRow}>
-                    <td colSpan={7} className={styles.expandCell}>
+                    <td colSpan={6} className={styles.expandCell}>
                       <div className={styles.expandContent}>
                         <table className={styles.accountsTable}>
                           <thead>

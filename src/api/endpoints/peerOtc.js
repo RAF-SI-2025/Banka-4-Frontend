@@ -23,6 +23,21 @@ export function extractPeerName(res) {
   return res?.displayName ?? null;
 }
 
+export function getPeerCounterparty(offer) {
+  const amBuyer = offer?.buyerId?.routingNumber === OUR_ROUTING_NUMBER;
+  return {
+    amBuyer,
+    role: amBuyer ? 'Prodavac' : 'Kupac',
+    foreignBankId: amBuyer ? offer?.sellerId : offer?.buyerId,
+  };
+}
+
+export function peerCounterpartyLabel(role, info, foreignBankId) {
+  const bank = info?.bankDisplayName ?? getBankName(foreignBankId?.routingNumber);
+  const name = extractPeerName(info);
+  return name ? `${role} — ${name} (${bank})` : `${role} (${bank})`;
+}
+
 export const peerOtcApi = {
   getPublicStocks:     ()              => api.get('/peer-otc/public-stocks'),
   getMyNegotiations:   ()              => api.get('/peer-otc/negotiations'),
@@ -32,5 +47,5 @@ export const peerOtcApi = {
   withdrawNegotiation: (rn, id)        => api.delete(`/peer-otc/negotiations/${rn}/${id}`),
   getMyContracts:      ()              => api.get('/peer-otc/contracts'),
   exerciseContract:    (rn, id, acct)  => api.post(`/peer-otc/contracts/${rn}/${id}/exercise`, { accountNumber: acct }),
-  getPeerUser:         (rn, id)        => api.get(`/user/${rn}/${id}`),
+  getPeerUser:         (rn, id)        => api.get(`/peer-otc/user/${rn}/${id}`),
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { peerOtcApi, getBankName, isSelfPeer, isMyTurnPeer, extractPeerName } from '../../../api/endpoints/peerOtc';
+import { peerOtcApi, isMyTurnPeer, getPeerCounterparty, peerCounterpartyLabel } from '../../../api/endpoints/peerOtc';
 import styles from '../OtcPortalPage.module.css';
 
 const CURRENCIES = ['RSD', 'EUR', 'USD', 'CHF', 'JPY', 'AUD', 'CAD', 'GBP'];
@@ -24,20 +24,19 @@ export default function PeerNegotiationModal({ negotiation, user, onClose, onRef
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [counterpartyName, setCounterpartyName] = useState(null);
+  const [counterpartyInfo, setCounterpartyInfo] = useState(null);
 
   const { id, status, offer } = negotiation;
   const rn = id?.routingNumber;
   const negId = id?.id;
   const isOngoing = status === 'ongoing';
   const myTurn = isMyTurnPeer(offer, user);
-  const amBuyer = isSelfPeer(offer?.buyerId, user);
+  const { role, foreignBankId } = getPeerCounterparty(offer);
 
   useEffect(() => {
-    const counterpartyId = amBuyer ? offer?.sellerId : offer?.buyerId;
-    if (!counterpartyId?.routingNumber || !counterpartyId?.id) return;
-    peerOtcApi.getPeerUser(counterpartyId.routingNumber, counterpartyId.id)
-      .then(res => setCounterpartyName(extractPeerName(res)))
+    if (!foreignBankId?.routingNumber || !foreignBankId?.id) return;
+    peerOtcApi.getPeerUser(foreignBankId.routingNumber, foreignBankId.id)
+      .then(res => setCounterpartyInfo(res))
       .catch(() => {});
   }, []);
 
@@ -46,11 +45,7 @@ export default function PeerNegotiationModal({ negotiation, user, onClose, onRef
   }
 
   function getCounterpartyLabel() {
-    const role = amBuyer ? 'Prodavac' : 'Kupac';
-    const bank = getBankName(amBuyer ? offer?.sellerId?.routingNumber : offer?.buyerId?.routingNumber);
-    return counterpartyName
-      ? `${role} — ${counterpartyName} (${bank})`
-      : `${role} (${bank})`;
+    return peerCounterpartyLabel(role, counterpartyInfo, foreignBankId);
   }
 
   async function handleAccept() {

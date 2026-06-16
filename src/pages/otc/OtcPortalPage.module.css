@@ -175,6 +175,14 @@
 .btnPrimary:hover { opacity: 0.88; }
 .btnPrimary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.mutedTag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx-3, #94a3b8);
+  font-style: italic;
+}
+
 .btnGhost {
   background: white;
   color: var(--tx-1);

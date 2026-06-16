@@ -14,7 +14,7 @@ import { useSearchParams } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 import Toast from '../../components/ui/Toast';
 import { diffOffers, summarizeEvents } from './utils/otcNotifications';
-import { peerOtcApi, getBankName, isSelfPeer, OUR_ROUTING_NUMBER, extractPeerName } from '../../api/endpoints/peerOtc';
+import { peerOtcApi, getBankName, OUR_ROUTING_NUMBER, extractPeerName, getPeerCounterparty, peerCounterpartyLabel } from '../../api/endpoints/peerOtc';
 
 const TAB = {
   DOSTUPNE: 'DOSTUPNE',
@@ -162,7 +162,6 @@ function DostupneAkcije() {
       const expectedOwnerType = getExpectedOwnerType(user);
       const list = extractArray(res).filter(
         stock => String(stock.owner_type ?? '').toUpperCase() === expectedOwnerType
-          && Number(stock.owner_id) !== Number(partyId)
       );
       setStocks(list);
     } catch (err) {
@@ -225,18 +224,45 @@ function DostupneAkcije() {
         ]);
         if (ctrl.signal.aborted) return;
         setAccounts(extractArray(accsRes).map(normalizeAccount));
-        const rows = extractArray(peerRes).flatMap(ps =>
-          (ps.sellers ?? []).map(s => ({
+        const pairs = extractArray(peerRes).flatMap(ps =>
+          (ps.sellers ?? []).map(s => ({ ps, s }))
+        );
+
+        // Resolve each unique seller {rn, id} into a real display name + bank name.
+        const sellerById = new Map();
+        for (const { s } of pairs) {
+          const sel = s.seller;
+          if (sel?.routingNumber != null && sel?.id != null) {
+            sellerById.set(`${sel.routingNumber}/${sel.id}`, sel);
+          }
+        }
+        const infoByKey = {};
+        await Promise.allSettled(
+          [...sellerById.entries()].map(async ([key, sel]) => {
+            try {
+              infoByKey[key] = await peerOtcApi.getPeerUser(sel.routingNumber, sel.id);
+            } catch {
+              // leave unresolved — falls back to the bank label below
+            }
+          })
+        );
+        if (ctrl.signal.aborted) return;
+
+        const rows = pairs.map(({ ps, s }) => {
+          const sel = s.seller;
+          const info = infoByKey[`${sel?.routingNumber}/${sel?.id}`];
+          const bankLabel = getBankName(sel?.routingNumber);
+          return {
             _isPeer: true,
             ticker: ps.stock?.ticker ?? '—',
             name: ps.stock?.ticker ?? '—',
-            owner_name: getBankName(s.seller?.routingNumber),
-            bank_name: getBankName(s.seller?.routingNumber),
+            owner_name: extractPeerName(info) ?? bankLabel,
+            bank_name: info?.bankDisplayName ?? bankLabel,
             available_amount: s.amount,
             price: null,
-            _sellerId: s.seller,
-          }))
-        );
+            _sellerId: sel,
+          };
+        });
         setPeerStockRows(rows);
       } catch (err) {
         if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') return;
@@ -317,24 +343,31 @@ function DostupneAkcije() {
               </tr>
             </thead>
             <tbody>
-              {stocks.map((stock, i) => (
-                <tr key={stock.asset_ownership_id ?? stock.id ?? i}>
-                  <td className={styles.ticker}>{stock.ticker ?? '—'}</td>
-                  <td>{stock.name ?? stock.stock_name ?? '—'}</td>
-                  <td>{stock.owner_name ?? '—'}</td>
-                  <td>{stock.bank_name ?? '—'}</td>
-                  <td>{stock.available_amount ?? stock.public_amount ?? stock.amount ?? '—'}</td>
-                  <td>{stock.price != null ? `$${Number(stock.price).toFixed(2)}` : '—'}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button
-                      className={styles.btnPrimary}
-                      onClick={() => setOfferStock(stock)}
-                    >
-                      Pošalji ponudu
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {stocks.map((stock, i) => {
+                const isMine = Number(stock.owner_id) === Number(partyId);
+                return (
+                  <tr key={stock.asset_ownership_id ?? stock.id ?? i}>
+                    <td className={styles.ticker}>{stock.ticker ?? '—'}</td>
+                    <td>{stock.name ?? stock.stock_name ?? '—'}</td>
+                    <td>{stock.owner_name ?? '—'}</td>
+                    <td>{stock.bank_name ?? '—'}</td>
+                    <td>{stock.available_amount ?? stock.public_amount ?? stock.amount ?? '—'}</td>
+                    <td>{stock.price != null ? `$${Number(stock.price).toFixed(2)}` : '—'}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {isMine ? (
+                        <span className={styles.mutedTag}>Vaša akcija</span>
+                      ) : (
+                        <button
+                          className={styles.btnPrimary}
+                          onClick={() => setOfferStock(stock)}
+                        >
+                          Pošalji ponudu
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
               {peerStockRows.map((stock, i) => (
                 <tr key={`peer-${stock.ticker}-${i}`}>
                   <td className={styles.ticker}>
@@ -578,34 +611,24 @@ function AktivnePonude() {
   }
 
   function getPeerCounterpartyLabel(offer) {
-    const amBuyer = isSelfPeer(offer.buyerId, user);
-    const counterpartyId = amBuyer ? offer.sellerId : offer.buyerId;
-    const nameKey = `${counterpartyId?.routingNumber}/${counterpartyId?.id}`;
-    const resolvedName = peerNames[nameKey];
-    const role = amBuyer ? 'Prodavac' : 'Kupac';
-    const bankLabel = getBankName(counterpartyId?.routingNumber);
-    return resolvedName
-      ? `${role} — ${resolvedName} (${bankLabel})`
-      : `${role} (${bankLabel})`;
+    const { role, foreignBankId } = getPeerCounterparty(offer);
+    const nameKey = `${foreignBankId?.routingNumber}/${foreignBankId?.id}`;
+    return peerCounterpartyLabel(role, peerNames[nameKey], foreignBankId);
   }
 
   async function fetchPeerNames(negotiations) {
     const toFetch = new Map();
     for (const neg of negotiations) {
-      const offer = neg.offer ?? {};
-      const amBuyer = isSelfPeer(offer.buyerId, user);
-      const counterpartyId = amBuyer ? offer.sellerId : offer.buyerId;
-      if (counterpartyId?.routingNumber && counterpartyId?.id) {
-        toFetch.set(`${counterpartyId.routingNumber}/${counterpartyId.id}`, counterpartyId);
+      const { foreignBankId } = getPeerCounterparty(neg.offer ?? {});
+      if (foreignBankId?.routingNumber && foreignBankId?.id) {
+        toFetch.set(`${foreignBankId.routingNumber}/${foreignBankId.id}`, foreignBankId);
       }
     }
     const results = {};
     await Promise.allSettled(
       [...toFetch.entries()].map(async ([key, id]) => {
         try {
-          const res = await peerOtcApi.getPeerUser(id.routingNumber, id.id);
-          const name = extractPeerName(res);
-          if (name) results[key] = name;
+          results[key] = await peerOtcApi.getPeerUser(id.routingNumber, id.id);
         } catch {
           // silently fall back to bank name
         }
@@ -1052,6 +1075,7 @@ function SklopljeniUgovori() {
   const [exerciseError, setExerciseError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [showOtherContracts, setShowOtherContracts] = useState(false);
+  const [showExercised, setShowExercised] = useState(false);
 
   async function loadContracts() {
     try {
@@ -1085,6 +1109,9 @@ function SklopljeniUgovori() {
     loadContracts();
   }, [partyId, isClient]);
 
+  const exercisedOptions = options.filter(o => o.status === 'EXERCISED');
+  const exercisedPeerContracts = peerContracts.filter(c => !!c.exercisedAt || c.status === 'exercised');
+
   const filtered = options.filter(o => {
     if (o.status === 'EXERCISED') return false;
     return filter === 'expired'
@@ -1093,7 +1120,7 @@ function SklopljeniUgovori() {
   });
 
   const filteredPeer = peerContracts.filter(c => {
-    if (c.status === 'EXERCISED') return false;
+    if (c.exercisedAt || c.status === 'exercised') return false;
     return filter === 'expired'
       ? isExpired(c.settlementDate)
       : !isExpired(c.settlementDate);
@@ -1183,10 +1210,6 @@ function SklopljeniUgovori() {
         <div className={styles.loadingState}><Spinner /></div>
       ) : error ? (
         <div className={styles.errorBox}>{error}</div>
-      ) : filtered.length === 0 && filteredPeer.length === 0 ? (
-        <div className={styles.emptyTable}>
-          Nema {filter === 'expired' ? 'isteklih' : 'važećih'} ugovora.
-        </div>
       ) : (() => {
         const myContracts       = filtered.filter(c => Number(c.buyer_id) === Number(partyId));
         const otherContracts    = filtered.filter(c => Number(c.buyer_id) !== Number(partyId));
@@ -1297,7 +1320,7 @@ function SklopljeniUgovori() {
                 }}
               >
                 <span style={{ fontSize: 10 }}>{showOtherContracts ? '▼' : '▶'}</span>
-                Peer contracts ({otherContracts.length + otherPeerContracts.length})
+                Odlazni ugovori ({otherContracts.length + otherPeerContracts.length})
               </button>
               {showOtherContracts && (
                 <div className={styles.tableWrap}>
@@ -1309,6 +1332,77 @@ function SklopljeniUgovori() {
                       <tbody>
                         {otherContracts.map(renderRegularRow)}
                         {otherPeerContracts.map(renderPeerRow)}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <button
+                onClick={() => setShowExercised(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', padding: '12px 28px',
+                  background: 'none', border: 'none',
+                  borderTop: '1px solid var(--border)',
+                  cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                  color: 'var(--tx-2)', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: 10 }}>{showExercised ? '▼' : '▶'}</span>
+                Iskorišćeni ugovori ({exercisedOptions.length + exercisedPeerContracts.length})
+              </button>
+              {showExercised && (
+                <div className={styles.tableWrap}>
+                  {exercisedOptions.length === 0 && exercisedPeerContracts.length === 0 ? (
+                    <div className={styles.emptyTable}>Nema iskorišćenih ugovora.</div>
+                  ) : (
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>STOCK</th>
+                          <th>AMOUNT</th>
+                          <th>STRIKE PRICE</th>
+                          <th>PREMIUM</th>
+                          <th>SETTLEMENT DATE</th>
+                          <th>SELLER INFO</th>
+                          <th>ISKORIŠĆEN</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {exercisedOptions.map(contract => (
+                          <tr key={`ex-${contract.otc_option_contract_id}`}>
+                            <td className={styles.ticker}>{contract.ticker}</td>
+                            <td>{contract.amount}</td>
+                            <td>{contract.strike_price_rsd}</td>
+                            <td>{contract.premium_rsd}</td>
+                            <td>{formatDate(contract.settlement_date)}</td>
+                            <td>Seller #{contract.seller_id}</td>
+                            <td>{contract.exercised_at ? formatDate(contract.exercised_at) : '—'}</td>
+                          </tr>
+                        ))}
+                        {exercisedPeerContracts.map(contract => {
+                          const rn = contract.id?.routingNumber;
+                          const cId = contract.id?.id;
+                          return (
+                            <tr key={`ex-peer-${rn}-${cId}`}>
+                              <td className={styles.ticker}>
+                                {contract.ticker}
+                                <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 5px', borderRadius: 999, background: '#3b82f6', color: 'white', verticalAlign: 'middle' }}>
+                                  PEER
+                                </span>
+                              </td>
+                              <td>{contract.amount}</td>
+                              <td>{contract.strikePrice ? `${Number(contract.strikePrice.amount).toFixed(2)} ${contract.strikePrice.currency}` : '—'}</td>
+                              <td>{contract.premium ? `${Number(contract.premium.amount).toFixed(2)} ${contract.premium.currency}` : '—'}</td>
+                              <td>{formatDate(contract.settlementDate)}</td>
+                              <td>Seller {contract.sellerId?.id?.slice(0, 8)}… ({getBankName(contract.sellerId?.routingNumber)})</td>
+                              <td>{contract.exercisedAt ? formatDate(contract.exercisedAt) : '—'}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}

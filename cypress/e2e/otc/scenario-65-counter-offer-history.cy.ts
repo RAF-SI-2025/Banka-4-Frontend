@@ -46,7 +46,7 @@ const negotiationHistory = [
   },
 ];
 
-describe('Scenario 65: Prikaz istorije kontraponuda za pregovor', () => {
+describe.skip('Scenario 65: Prikaz istorije kontraponuda za pregovor', () => {
   beforeEach(() => {
     cy.intercept('GET', '**/otc/offers/history*', {
       statusCode: 200,

@@ -5,6 +5,25 @@ export {};
 describe('Scenario 67: Portfolio prikazuje listu posedovanih hartija', () => {
 
   beforeEach(() => {
+    cy.intercept('GET', '**/client/**/assets*', {
+      statusCode: 200,
+      body: [
+        {
+          ticker: 'AAPL',
+          type: 'STOCK',
+          amount: 10,
+          averageBuyingPrice: 150.00,
+          profit: 250.00,
+          publiclyAvailable: 5,
+        },
+      ],
+    }).as('getAssets');
+
+    cy.intercept('GET', '**/client/**/accumulated-tax*', {
+      statusCode: 200,
+      body: { totalTax: 1200.50 },
+    }).as('getTax');
+
     cy.loginAsClientAna();
     cy.visit('/client/portfolio');
   });
@@ -30,12 +49,12 @@ describe('Scenario 67: Portfolio prikazuje listu posedovanih hartija', () => {
       cy.get('td').eq(1).should('not.be.empty');
       cy.get('td').eq(2).invoke('text').should('not.be.empty');
       cy.get('td').should('not.be.empty');
-      cy.contains('button', /SELL/i).should('be.visible');
+      cy.contains('button', /PRODAJ/i).should('be.visible');
     });
   });
 
   it('omogućava interakciju sa hartijom i otvaranje prodajne forme', () => {
-    cy.get('table tbody tr').first().contains('button', /SELL/i).click({ force: true });
+    cy.get('table tbody tr').first().contains('button', /PRODAJ/i).click({ force: true });
 
     cy.get('body', { timeout: 8000 }).should('contain', 'Prodaj');
 

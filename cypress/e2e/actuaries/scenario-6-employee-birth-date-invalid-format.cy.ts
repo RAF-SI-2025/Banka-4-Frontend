@@ -31,7 +31,7 @@ describe('Scenario 6: Datum rođenja nije u ispravnom formatu', () => {
     beforeEach(() => {
         cy.loginAsAdmin();
 
-        cy.intercept('POST', `${apiUrl()}/employees/register`, (req) => {
+        cy.intercept('POST', `**/employees/register`, (req) => {
             req.reply({ statusCode: 422, body: { error: 'intercepted by test' } });
         }).as('registerEmployee');
 

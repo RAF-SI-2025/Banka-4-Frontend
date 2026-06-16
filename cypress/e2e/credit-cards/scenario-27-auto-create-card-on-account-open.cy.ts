@@ -3,7 +3,7 @@ describe('Scenario 27: Automatsko kreiranje kartice pri otvaranju racuna', () =>
         cy.loginAsAdmin();
         const apiUrl = Cypress.env('API_URL');
 
-        cy.intercept('GET', `${apiUrl}/clients*`, {
+        cy.intercept('GET', `**/clients*`, {
             statusCode: 200,
             body: {
                 data: [

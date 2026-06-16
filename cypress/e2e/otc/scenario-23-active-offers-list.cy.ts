@@ -1,9 +1,38 @@
-// Realni korisnik: marko.markovic@example.com (kupac, ima 2 aktivne ponude ka Ani - offer 10, 11)
-// Ana ima iste ponude kao prodavac
-// Ticker: UFG, amount: 1 po ponudi, razlicite cene
-
 describe('Scenario 23: Stranica Aktivne ponude prikazuje sve aktivne pregovore', () => {
   beforeEach(() => {
+    cy.intercept('GET', '**/otc/offers/active*', {
+      statusCode: 200,
+      body: [
+        {
+          otc_offer_id: 10,
+          ticker: 'UFG',
+          amount: 1,
+          price_per_stock_rsd: 18100.00,
+          settlement_date: '2099-12-31T00:00:00Z',
+          premium: 10.00,
+          buyer_id: 2001,
+          seller_id: 9002,
+          status: 'PENDING',
+        },
+        {
+          otc_offer_id: 11,
+          ticker: 'UFG',
+          amount: 1,
+          price_per_stock_rsd: 18200.00,
+          settlement_date: '2099-12-31T00:00:00Z',
+          premium: 10.00,
+          buyer_id: 2001,
+          seller_id: 9002,
+          status: 'PENDING',
+        },
+      ],
+    }).as('getOffers');
+
+    cy.intercept('GET', '**/peer-otc/negotiations*', {
+      statusCode: 200,
+      body: [],
+    }).as('getPeerNegotiations');
+
     cy.loginAsClient();
     cy.visit('/otc');
     cy.contains('button', 'Aktivne ponude').click();

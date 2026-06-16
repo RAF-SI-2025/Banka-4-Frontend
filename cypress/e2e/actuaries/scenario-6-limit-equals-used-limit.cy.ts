@@ -2,12 +2,12 @@ import { apiUrl, buildActuaries, loginAs, supervisorUser } from './helpers';
 
 describe('Scenario 6: Postavljanje limita jednakog trenutnom usedLimit-u', () => {
   it('dozvoljava izmenu i uspesno cuva limit', () => {
-    cy.intercept('GET', `${apiUrl()}/actuaries*`, {
+    cy.intercept('GET', `**/actuaries*`, {
       statusCode: 200,
       body: { data: buildActuaries({ limit: 90000, used_limit: 50000 }) },
     }).as('getActuaries');
 
-    cy.intercept('PATCH', `${apiUrl()}/actuaries/101`, (req) => {
+    cy.intercept('PATCH', `**/actuaries/101`, (req) => {
       expect(req.body).to.deep.equal({ limit: 50000 });
       req.reply({ statusCode: 200, body: { ok: true } });
     }).as('changeLimit');

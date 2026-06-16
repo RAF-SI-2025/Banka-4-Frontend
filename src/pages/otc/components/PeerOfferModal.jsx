@@ -101,12 +101,11 @@ export default function PeerOfferModal({ open, ticker, sellerId, accounts, onClo
 
           <div className={styles.field}>
             <label>Cena po akciji <span className={styles.required}>*</span></label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className={styles.inputWithCurrency}>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                style={{ flex: 1 }}
                 value={form.pricePerStock}
                 onChange={e => set('pricePerStock', e.target.value)}
                 disabled={loading}
@@ -115,7 +114,7 @@ export default function PeerOfferModal({ open, ticker, sellerId, accounts, onClo
                 value={form.priceCurrency}
                 onChange={e => set('priceCurrency', e.target.value)}
                 disabled={loading}
-                style={{ width: 80 }}
+                className={styles.currencySelect}
               >
                 {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -124,12 +123,11 @@ export default function PeerOfferModal({ open, ticker, sellerId, accounts, onClo
 
           <div className={styles.field}>
             <label>Premija <span className={styles.required}>*</span></label>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className={styles.inputWithCurrency}>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                style={{ flex: 1 }}
                 value={form.premium}
                 onChange={e => set('premium', e.target.value)}
                 disabled={loading}
@@ -138,7 +136,7 @@ export default function PeerOfferModal({ open, ticker, sellerId, accounts, onClo
                 value={form.premiumCurrency}
                 onChange={e => set('premiumCurrency', e.target.value)}
                 disabled={loading}
-                style={{ width: 80 }}
+                className={styles.currencySelect}
               >
                 {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>

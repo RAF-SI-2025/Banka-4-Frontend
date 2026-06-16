@@ -6,7 +6,7 @@ describe('Feature: Kreiranje i aktivacija zaposlenog', () => {
         cy.loginAsAdmin();
         const apiUrl = Cypress.env('API_URL') as string;
 
-        cy.intercept('POST', `${apiUrl}/employees/register`, (req) => {
+        cy.intercept('POST', `**/employees/register`, (req) => {
             req.reply({
                 statusCode: 201,
                 body: {
@@ -19,7 +19,7 @@ describe('Feature: Kreiranje i aktivacija zaposlenog', () => {
             });
         }).as('registerEmployee');
 
-        cy.intercept('GET', `${apiUrl}/employees?page=*&page_size=*`, {
+        cy.intercept('GET', `**/employees*`, {
             statusCode: 200,
             body: {
                 data: [],

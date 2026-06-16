@@ -11,10 +11,58 @@ const GREEN  = '220, 252, 231';
 const YELLOW = '254, 249, 195';
 const RED    = '254, 226, 226';
 
+const mockOffers = [
+  {
+    otc_offer_id: 10,
+    ticker: 'UFG',
+    amount: 1,
+    price_per_stock_rsd: 100.00,
+    current_price: 99.00,
+    settlement_date: '2099-12-31T00:00:00Z',
+    premium: 5.00,
+    buyer_id: 2001,
+    seller_id: 9002,
+    status: 'PENDING',
+  },
+  {
+    otc_offer_id: 11,
+    ticker: 'UFG',
+    amount: 1,
+    price_per_stock_rsd: 115.00,
+    current_price: 100.00,
+    settlement_date: '2099-12-31T00:00:00Z',
+    premium: 5.00,
+    buyer_id: 2001,
+    seller_id: 9002,
+    status: 'PENDING',
+  },
+  {
+    otc_offer_id: 12,
+    ticker: 'UFG',
+    amount: 1,
+    price_per_stock_rsd: 130.00,
+    current_price: 100.00,
+    settlement_date: '2099-12-31T00:00:00Z',
+    premium: 5.00,
+    buyer_id: 2001,
+    seller_id: 9002,
+    status: 'PENDING',
+  },
+];
+
 describe('Scenario 24: Vizualizacija odstupanja u ponudama bojama', () => {
   beforeEach(() => {
+    cy.intercept('GET', '**/otc/offers/active*', {
+      statusCode: 200,
+      body: mockOffers,
+    }).as('getOffers');
+
+    cy.intercept('GET', '**/peer-otc/negotiations*', {
+      statusCode: 200,
+      body: [],
+    }).as('getPeerNegotiations');
+
     cy.loginAsClient();
-    cy.intercept('GET', '**/otc/offers/active').as('getOffers');
     cy.visit('/otc');
     cy.contains('button', 'Aktivne ponude').click();
     cy.wait('@getOffers').its('response.body').as('offersData');

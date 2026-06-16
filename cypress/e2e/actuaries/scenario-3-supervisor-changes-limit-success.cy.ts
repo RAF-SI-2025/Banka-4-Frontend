@@ -2,12 +2,12 @@ import { apiUrl, buildActuaries, loginAs, supervisorUser } from './helpers';
 
 describe('Scenario 3: Supervizor menja limit agentu - uspesno', () => {
   it('cuva novi limit, prikazuje potvrdu i belezi audit log flag', () => {
-    cy.intercept('GET', `${apiUrl()}/actuaries*`, {
+    cy.intercept('GET', `**/actuaries*`, {
       statusCode: 200,
       body: { data: buildActuaries({ limit: 100000, used_limit: 30000 }) },
     }).as('getActuaries');
 
-    cy.intercept('PATCH', `${apiUrl()}/actuaries/101`, (req) => {
+    cy.intercept('PATCH', `**/actuaries/101`, (req) => {
       const requestedLimit = Number(req.body?.limit);
 
       if (requestedLimit < 30000) {

@@ -1,11 +1,38 @@
-// Realni korisnik: marko.markovic@example.com
-// Realni ugovori Marka:
-//   - ID 7: UFG, status ACTIVE, settlement 2099-12-31 → VAŽEĆI, ima "Iskoristi"
-//   - ID 1: UFG, status EXPIRED, settlement 2026-05-12 → ISTEKLI
-//   - ID 2-6: status EXERCISED → uvek skriveni
-
 describe('Scenario 25: Filtriranje sklopljenih ugovora po statusu', () => {
   beforeEach(() => {
+    cy.intercept('GET', '**/otc/contracts*', {
+      statusCode: 200,
+      body: [
+        {
+          otc_option_contract_id: 7,
+          ticker: 'UFG',
+          amount: 10,
+          strike_price_rsd: 18000.00,
+          premium_rsd: 50.00,
+          settlement_date: '2099-12-31T00:00:00Z',
+          seller_id: 9002,
+          profit: 125.00,
+          status: 'ACTIVE',
+        },
+        {
+          otc_option_contract_id: 1,
+          ticker: 'UFG',
+          amount: 5,
+          strike_price_rsd: 17000.00,
+          premium_rsd: 30.00,
+          settlement_date: '2026-05-12T00:00:00Z',
+          seller_id: 9002,
+          profit: -50.00,
+          status: 'EXPIRED',
+        },
+      ],
+    }).as('getContracts');
+
+    cy.intercept('GET', '**/peer-otc/contracts*', {
+      statusCode: 200,
+      body: [],
+    }).as('getPeerContracts');
+
     cy.loginAsClient();
     cy.visit('/otc');
     cy.contains('button', 'Sklopljeni ugovori').click();

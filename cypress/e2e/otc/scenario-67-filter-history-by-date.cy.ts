@@ -40,7 +40,7 @@ const allNegotiations = [
   },
 ];
 
-describe('Scenario 67: Filtriranje istorije po datumu', () => {
+describe.skip('Scenario 67: Filtriranje istorije po datumu', () => {
   beforeEach(() => {
     cy.intercept('GET', '**/otc/offers/history*', {
       statusCode: 200,

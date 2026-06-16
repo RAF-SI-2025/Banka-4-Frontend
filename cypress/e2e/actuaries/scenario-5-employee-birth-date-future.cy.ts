@@ -28,7 +28,7 @@ describe('Scenario 5: Datum rođenja je u budućnosti', () => {
     beforeEach(() => {
         cy.loginAsAdmin();
 
-        cy.intercept('POST', `${apiUrl()}/employees/register`, (req) => {
+        cy.intercept('POST', `**/employees/register`, (req) => {
             req.reply({ statusCode: 422, body: { error: 'intercepted by test' } });
         }).as('registerEmployee');
 

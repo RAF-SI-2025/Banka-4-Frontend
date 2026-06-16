@@ -29,7 +29,6 @@ function normalizeUser(u) {
     email:      u.email      ?? '',
     team:       USER_TYPE_MAP[u.userType?.toLowerCase()] ?? u.userType ?? '',
     tax_debt:   taxDebt,
-    tax_paid:   0,
     tax_status: deriveStatus(taxDebt),
     accounts:   [],
   };

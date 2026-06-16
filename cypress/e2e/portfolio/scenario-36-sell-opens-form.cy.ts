@@ -5,14 +5,33 @@ export {};
 describe('Scenario 36: SELL order iz portfolija otvara formu za prodaju', () => {
 
   beforeEach(() => {
+    cy.intercept('GET', '**/client/**/assets*', {
+      statusCode: 200,
+      body: [
+        {
+          ticker: 'AAPL',
+          type: 'STOCK',
+          amount: 10,
+          averageBuyingPrice: 150.00,
+          profit: 250.00,
+          publiclyAvailable: 5,
+        },
+      ],
+    }).as('getAssets');
+
+    cy.intercept('GET', '**/client/**/accumulated-tax*', {
+      statusCode: 200,
+      body: { totalTax: 0 },
+    }).as('getTax');
+
     cy.loginAsClientAna();
     cy.visit('/client/portfolio');
   });
 
-  it('klik na SELL otvara modal sa SELL formom', () => {
+  it('klik na PRODAJ otvara modal sa SELL formom', () => {
     cy.get('table', { timeout: 10000 }).should('be.visible');
 
-    cy.contains('button', 'SELL').first().should('be.visible').click({ force: true });
+    cy.contains('button', /PRODAJ/i).first().should('be.visible').click({ force: true });
 
     cy.contains(/Prodaj —|Sell —/i).should('be.visible');
 
@@ -20,7 +39,7 @@ describe('Scenario 36: SELL order iz portfolija otvara formu za prodaju', () => 
   });
 
   it('forma sadrži polje za unos količine', () => {
-    cy.contains('button', 'SELL').first().click({ force: true });
+    cy.contains('button', /PRODAJ/i).first().click({ force: true });
 
     cy.get('input[type="number"]').first().should('exist');
 
@@ -28,7 +47,7 @@ describe('Scenario 36: SELL order iz portfolija otvara formu za prodaju', () => 
   });
 
   it('unos validne količine i izbor računa omogućava korak za potvrdu', () => {
-    cy.contains('button', 'SELL').first().click({ force: true });
+    cy.contains('button', /PRODAJ/i).first().click({ force: true });
 
     cy.get('select').eq(1).should('not.contain', 'Učitavanje...');
     cy.get('select').eq(1).select(1, { force: true });

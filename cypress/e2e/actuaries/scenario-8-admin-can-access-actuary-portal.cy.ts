@@ -2,7 +2,7 @@ import { adminUser, apiUrl, buildActuaries, loginAs } from './helpers';
 
 describe('Scenario 8: Svaki admin je ujedno i supervizor', () => {
   it('admin vidi listu agenata i moze menjati limite', () => {
-    cy.intercept('GET', `${apiUrl()}/actuaries*`, {
+    cy.intercept('GET', `**/actuaries*`, {
       statusCode: 200,
       body: { data: buildActuaries() },
     }).as('getActuaries');

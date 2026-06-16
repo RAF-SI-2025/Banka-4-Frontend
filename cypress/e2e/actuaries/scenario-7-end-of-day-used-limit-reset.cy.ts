@@ -31,11 +31,11 @@ describe('Scenario 7: Automatski reset usedLimit-a na kraju radnog dana', () => 
       },
     ];
 
-    cy.intercept('GET', `${base}/actuaries*`, (req) => {
+    cy.intercept('GET', `**/actuaries*`, (req) => {
       req.reply({ statusCode: 200, body: { data: rows } });
     }).as('getActuaries');
 
-    cy.intercept('POST', `${base}/actuaries/*/reset-used-limit`, (req) => {
+    cy.intercept('POST', `**/actuaries/*/reset-used-limit`, (req) => {
       const id = Number(req.url.split('/actuaries/')[1]?.split('/')[0]);
       rows = rows.map((row) => (row.id === id ? { ...row, used_limit: 0 } : row));
       req.reply({ statusCode: 200, body: { ok: true } });

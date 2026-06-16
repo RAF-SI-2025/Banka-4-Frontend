@@ -28,7 +28,7 @@ const exchanges = [
 describe('Scenario 82: Prikaz liste berzi i toggle za radno vreme', () => {
   beforeEach(() => {
     // Use exact pathname to avoid matching the page visit /admin/exchanges
-    cy.intercept({ method: 'GET', pathname: '/exchanges' }, {
+    cy.intercept('GET', '**/exchanges*', {
       statusCode: 200,
       body: { data: exchanges, total: exchanges.length },
     }).as('getExchanges');
@@ -65,7 +65,7 @@ describe('Scenario 82: Prikaz liste berzi i toggle za radno vreme', () => {
   });
 
   it('klik na toggle šalje PATCH i ažurira status berze', () => {
-    cy.intercept({ method: 'PATCH', pathname: '/exchanges/XNAS/toggle' }, {
+    cy.intercept('PATCH', '**/exchanges/XNAS/toggle', {
       statusCode: 200,
       body: { mic_code: 'XNAS', trading_enabled: false },
     }).as('toggleNasdaq');
@@ -82,7 +82,7 @@ describe('Scenario 82: Prikaz liste berzi i toggle za radno vreme', () => {
   });
 
   it('klik na toggle za neaktivnu berzu je omogućava', () => {
-    cy.intercept({ method: 'PATCH', pathname: '/exchanges/XLON/toggle' }, {
+    cy.intercept('PATCH', '**/exchanges/XLON/toggle', {
       statusCode: 200,
       body: { mic_code: 'XLON', trading_enabled: true },
     }).as('toggleLse');

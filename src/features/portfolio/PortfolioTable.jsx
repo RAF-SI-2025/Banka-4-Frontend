@@ -46,8 +46,8 @@ export default function PortfolioTable({ assets, isAdmin, onSell, onPublish, onV
                 <td className={styles.ticker}>{asset.ticker}</td>
                 <td style={{ fontSize: 12, color: 'var(--tx-2)' }}>{asset.type}</td>
                 <td>{asset.amount}</td>
-                <td>{asset.pricePerUnitRSD != null
-                  ? `${Number(asset.pricePerUnitRSD).toLocaleString('sr-RS', { minimumFractionDigits: 2 })} RSD`
+                <td>{(asset.price_per_unit_rsd ?? asset.pricePerUnitRSD) != null
+                  ? `${Number(asset.price_per_unit_rsd ?? asset.pricePerUnitRSD).toLocaleString('sr-RS', { minimumFractionDigits: 2 })} RSD`
                   : asset.price != null ? `$${asset.price}` : '—'}
                 </td>
                 <td>{asset.public_amount ?? asset.publicAmount ?? '—'}</td>

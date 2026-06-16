@@ -1210,10 +1210,6 @@ function SklopljeniUgovori() {
         <div className={styles.loadingState}><Spinner /></div>
       ) : error ? (
         <div className={styles.errorBox}>{error}</div>
-      ) : filtered.length === 0 && filteredPeer.length === 0 ? (
-        <div className={styles.emptyTable}>
-          Nema {filter === 'expired' ? 'isteklih' : 'važećih'} ugovora.
-        </div>
       ) : (() => {
         const myContracts       = filtered.filter(c => Number(c.buyer_id) === Number(partyId));
         const otherContracts    = filtered.filter(c => Number(c.buyer_id) !== Number(partyId));
